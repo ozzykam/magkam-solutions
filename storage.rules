@@ -1,0 +1,93 @@
+rules_version = '2';
+  service firebase.storage {
+    match /b/{bucket}/o {
+
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Product images
+      match /products/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() &&
+                       request.resource.size < 5 * 1024 * 1024 &&     
+                       
+  request.resource.contentType.matches('image/.*');
+      }
+
+      // Category images
+      match /categories/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() &&
+                       request.resource.size < 3 * 1024 * 1024 &&     
+                       
+  request.resource.contentType.matches('image/.*');
+      }
+
+      // Tag images
+      match /tags/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() &&
+                       request.resource.size < 2 * 1024 * 1024 &&     
+                       
+  request.resource.contentType.matches('image/.*');
+      }
+
+      // Vendor images
+      match /vendors/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() &&
+                       request.resource.size < 3 * 1024 * 1024 &&     
+                       
+  request.resource.contentType.matches('image/.*');
+      }
+
+      // User avatars
+      match /avatars/{userId}/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() && request.auth.uid == userId    
+   &&
+                       request.resource.size < 2 * 1024 * 1024 &&     
+                       
+  request.resource.contentType.matches('image/.*');
+      }
+
+      // User images (alternative path)
+      match /users/{userId}/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() && request.auth.uid == userId    
+   &&
+                       request.resource.size < 2 * 1024 * 1024 &&     
+                       
+  request.resource.contentType.matches('image/.*');
+      }
+
+      // Content images (blog posts, recipes, etc.)
+      match /content/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() &&
+                       request.resource.size < 5 * 1024 * 1024 &&
+                       request.resource.contentType.matches('image/.*');
+      }
+
+      // SEO images (Open Graph images, etc.)
+      match /seo/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() &&
+                       request.resource.size < 5 * 1024 * 1024 &&
+                       request.resource.contentType.matches('image/.*');
+      }
+
+      // Uploads folder
+      match /uploads/{allPaths=**} {
+        allow read: if true;
+        allow write: if isSignedIn() &&
+                       request.resource.size < 10 * 1024 * 1024;
+      }
+
+      // Default deny
+      match /{allPaths=**} {
+        allow read, write: if false;
+      }
+    }
+  }

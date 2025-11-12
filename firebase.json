@@ -1,0 +1,11 @@
+{
+  "firestore": {
+    "database": "local-marketv2",
+    "location": "us-central1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

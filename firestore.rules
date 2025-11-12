@@ -1,0 +1,313 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for authentication and authorization
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('admin') || hasRole('super_admin');
+    }
+
+    function isEmployee() {
+      return hasRole('employee') || hasRole('manager') || isAdmin();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Anyone can read user profiles (for displaying names, etc.)
+      allow read: if true;
+
+      // Users can create their own profile during registration
+      allow create: if isSignedIn() && request.auth.uid == userId;
+
+      // Users can update their own profile, admins can update any
+      allow update: if isOwner(userId) || isAdmin();
+
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+
+    // Products collection
+    match /products/{productId} {
+      // Anyone can read products (public catalog)
+      allow read: if true;
+
+      // Only admins can create, update, or delete products
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Categories collection
+    match /categories/{categoryId} {
+      // Anyone can read categories
+      allow read: if true;
+
+      // Only admins can create, update, or delete categories
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Tags collection
+    match /tags/{tagId} {
+      // Anyone can read tags
+      allow read: if true;
+
+      // Only admins can create, update, or delete tags
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Vendors collection
+    match /vendors/{vendorId} {
+      // Anyone can read vendors
+      allow read: if true;
+
+      // Only admins can create, update, or delete vendors
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Reviews collection
+    match /reviews/{reviewId} {
+      // Anyone can read reviews
+      allow read: if true;
+
+      // Signed-in users can create reviews
+      allow create: if isSignedIn() &&
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.userName is string &&
+                      request.resource.data.rating >= 1 &&
+                      request.resource.data.rating <= 5;
+
+      // Users can update their own reviews, admins can update any
+      allow update: if isSignedIn() &&
+                      (resource.data.userId == request.auth.uid || isAdmin());
+
+      // Users can delete their own reviews, admins can delete any
+      allow delete: if isSignedIn() &&
+                      (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Orders collection
+    match /orders/{orderId} {
+      // Users can read their own orders, employees can read all orders
+      allow read: if isSignedIn() &&
+                    (resource.data.userId == request.auth.uid || isEmployee());
+
+      // Users can create their own orders
+      allow create: if isSignedIn() &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Only employees can update orders (status changes, etc.)
+      allow update: if isEmployee();
+
+      // Only admins can delete orders
+      allow delete: if isAdmin();
+    }
+
+    // Order Status History collection
+    match /orderStatusHistory/{historyId} {
+      // Users can read history for their orders, employees can read all
+      allow read: if isSignedIn() &&
+                    (resource.data.userId == request.auth.uid || isEmployee());
+
+      // Only employees can create status history entries
+      allow create: if isEmployee();
+
+      // No updates or deletes (history is immutable)
+      allow update, delete: if false;
+    }
+
+    // Order Fulfillment collection
+    match /orderFulfillments/{fulfillmentId} {
+      // Employees can read all fulfillments
+      allow read: if isEmployee();
+
+      // System/employees can create fulfillments
+      allow create: if isEmployee();
+
+      // Employees can update fulfillments
+      allow update: if isEmployee();
+
+      // Only admins can delete fulfillments
+      allow delete: if isAdmin();
+    }
+
+
+    // Refunds collection
+    match /refunds/{refundId} {
+      // Users can read their own refund requests, employees can read all
+      allow read: if isSignedIn() &&
+                    (resource.data.userId == request.auth.uid || isEmployee());
+
+      // Users can create refund requests for their own orders
+      allow create: if isSignedIn() &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Only admins can update refunds (approve/reject)
+      allow update: if isAdmin();
+
+      // Only admins can delete refunds
+      allow delete: if isAdmin();
+    }
+
+    // Saved Carts collection
+    match /savedCarts/{cartId} {
+      // Users can only read their own cart
+      allow read: if isSignedIn() && cartId == request.auth.uid;
+
+      // Users can create/update their own cart
+      allow create, update: if isSignedIn() && cartId == request.auth.uid;
+
+      // Users can delete their own cart, admins can delete any
+      allow delete: if isSignedIn() && (cartId == request.auth.uid || isAdmin());
+    }
+
+    // Time Slots collection
+    match /timeSlots/{slotId} {
+      // Anyone can read available time slots
+      allow read: if true;
+
+      // Admins can create time slots, users can create when needed
+      allow create: if isSignedIn();
+
+      // Signed-in users can update slots when making reservations
+      // Admins can update any slots
+      allow update: if isSignedIn();
+
+      // Only admins can delete time slots
+      allow delete: if isAdmin();
+    }
+
+    // Store Settings collection
+    match /storeSettings/{settingId} {
+      // Anyone can read store settings (hours, etc.)
+      allow read: if true;
+
+      // Only admins can update settings
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Contact Messages collection
+    match /contactMessages/{messageId} {
+      // Only admins can read messages
+      allow read: if isAdmin();
+
+      // Anyone can create a contact message
+      allow create: if true;
+
+      // Only admins can update messages (mark as read, archive, etc.)
+      allow update: if isAdmin();
+
+      // Only admins can delete messages
+      allow delete: if isAdmin();
+    }
+
+    // Wishlists collection
+    match /wishlists/{userId} {
+      // Users can only read their own wishlist
+      allow read: if isOwner(userId);
+
+      // Users can create their own wishlist
+      allow create: if isSignedIn() && request.auth.uid == userId;
+
+      // Users can update their own wishlist
+      allow update: if isOwner(userId);
+
+      // Users can delete their own wishlist
+      allow delete: if isOwner(userId);
+
+      // Admins can read all wishlists (for analytics)
+      allow read: if isAdmin();
+    }
+
+    // Content Posts collection (Blog, Recipes, Style Guides, etc.)
+    match /contentPosts/{postId} {
+      // Anyone can read published posts
+      allow read: if true;
+
+      // Admins can create posts
+      // Vendors can create if allowVendorPosts is enabled (checked in app logic)
+      allow create: if isSignedIn() &&
+                      request.resource.data.authorId == request.auth.uid &&
+                      (isAdmin() || hasRole('vendor'));
+
+      // Anyone can increment view count
+      // Authors can update their own posts, admins can update any
+      allow update: if
+        // Allow anyone to update ONLY viewCount field
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['viewCount'])) ||
+        // Allow authors to update their own posts
+        (isSignedIn() && resource.data.authorId == request.auth.uid) ||
+        // Allow admins to update any post
+        isAdmin();
+
+      // Only admins can delete posts
+      allow delete: if isAdmin();
+    }
+
+    // Content Reviews collection (reviews for blog posts, recipes, etc.)
+    match /contentReviews/{reviewId} {
+      // Anyone can read reviews
+      allow read: if true;
+
+      // Signed-in users can create reviews
+      allow create: if isSignedIn() &&
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.userName is string &&
+                      request.resource.data.rating >= 1 &&
+                      request.resource.data.rating <= 5;
+
+      // Users can update their own reviews, admins can update any
+      allow update: if isSignedIn() &&
+                      (resource.data.userId == request.auth.uid || isAdmin());
+
+      // Users can delete their own reviews, admins can delete any
+      allow delete: if isSignedIn() &&
+                      (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Content Categories collection
+    match /contentCategories/{categoryId} {
+      // Anyone can read categories
+      allow read: if true;
+
+      // Only admins can create, update, or delete categories
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Content Bookmarks collection
+    match /contentBookmarks/{userId} {
+      // Users can only read their own bookmarks
+      allow read: if isOwner(userId);
+
+      // Users can create their own bookmarks
+      allow create: if isSignedIn() && request.auth.uid == userId;
+
+      // Users can update their own bookmarks
+      allow update: if isOwner(userId);
+
+      // Users can delete their own bookmarks
+      allow delete: if isOwner(userId);
+
+      // Admins can read all bookmarks (for analytics)
+      allow read: if isAdmin();
+    }
+
+    // SEO Settings collection
+    match /seoSettings/{document} {
+      // Anyone can read SEO settings (public metadata)
+      allow read: if true;
+
+      // Only admins can create, update, or delete SEO settings
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}

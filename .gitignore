@@ -1,0 +1,168 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+*.test.local.*
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+/dist
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+# Exception: Keep the example file
+!.env.local.example
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebaserc
+*-debug.log
+firebase-export-*/
+firestore-emulator-data/
+
+# Firebase secrets and service accounts (CRITICAL - DO NOT COMMIT)
+serviceAccountKey.json
+serviceAccount*.json
+*-firebase-adminsdk-*.json
+google-services.json
+GoogleService-Info.plist
+
+# Secrets and credentials (CRITICAL - DO NOT COMMIT)
+*.key
+*.p12
+*.keystore
+*credentials*.json
+secrets.yaml
+secrets.yml
+.secrets/
+
+# Payment processor keys (CRITICAL - DO NOT COMMIT)
+stripe_keys.txt
+stripe_*.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Logs
+logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+.cache/
+
+# Local database files (if using SQLite for dev)
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*~.nib
+
+# Lock files (optional - some teams prefer to commit these)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# User-uploaded content (configure based on your needs)
+# /public/uploads/
+# /public/images/products/
+# /public/images/users/
+
+# Freelance marketing materials
+/app/freelance-flyer/
+freelance-flyer.html
+
+# Generated documentation
+/docs/generated/
+
+# Coverage reports
+/coverage/
+.nyc_output/
+
+# Testing
+.jest/
+
+# MacOS
+.AppleDouble
+.LSOverride
+
+# Windows
+[Tt]humbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# Sales and marketing materials (private)
+../pitch.md
+proposals/
+client-info/
+
+# Business development documents (private)
+business-docs/
+*.proposal.md
+*.contract.md
+*-pricing-*.md
