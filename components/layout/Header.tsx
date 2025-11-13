@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { StoreSettings } from '@/types/business-info';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { useCart } from '@/lib/contexts/CartContext';
-import { useWishlist } from '@/lib/contexts/WishlistContext';
 import { getUserBookmarks } from '@/services/content-bookmark-service';
 import { signOut } from '@/lib/firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -16,8 +15,6 @@ import SearchBar from '@/components/layout/SearchBar';
 
 const Header: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
-  const { getUniqueItemCount, openCartDrawer } = useCart();
-  const { getItemCount } = useWishlist();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -28,11 +25,20 @@ const Header: React.FC = () => {
     sectionNamePlural: string;
     urlSlug: string;
   } | null>(null);
+  const [serviceSettings, setServiceSettings] = useState<{
+    enabled: boolean;
+    serviceNamePlural: string;
+    urlSlug: string;
+  } | null>(null);
   const [businessName, setBusinessName] = useState('');
-
-  const uniqueItemCount = getUniqueItemCount();
-  const wishlistCount = getItemCount();
+  const [logo, setLogo] = useState<string | null>(null);
   const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [features, setFeatures] = useState<{
+    calculators?: { enabled: boolean; showInNavigation?: boolean };
+    bookmarks?: { enabled: boolean; showInNavigation?: boolean };
+    search?: { enabled: boolean };
+    userRegistration?: { enabled: boolean };
+  }>({});
 
   // Load bookmark count
   useEffect(() => {
@@ -52,9 +58,9 @@ const Header: React.FC = () => {
     loadBookmarkCount();
   }, [user]);
 
-  // Load content settings and business name
+  // Load content settings, service settings, business name, and logo
   useEffect(() => {
-    const loadContentSettings = async () => {
+    const loadSettings = async () => {
       try {
         const settingsDoc = await getDoc(doc(db, 'storeSettings', 'main'));
         if (settingsDoc.exists()) {
@@ -65,6 +71,20 @@ const Header: React.FC = () => {
             setBusinessName(settings.businessName);
           }
 
+          // Set logo
+          if (settings.themeSettings?.logo) {
+            setLogo(settings.themeSettings.logo);
+          }
+
+          // Set service settings
+          if (settings.serviceSettings) {
+            setServiceSettings({
+              enabled: settings.serviceSettings.enabled ?? true,
+              serviceNamePlural: settings.serviceSettings.serviceNamePlural || 'Services',
+              urlSlug: settings.serviceSettings.urlSlug || 'services',
+            });
+          }
+
           // Set content settings
           if (settings.contentSettings?.enabled) {
             setContentSettings({
@@ -73,13 +93,23 @@ const Header: React.FC = () => {
               urlSlug: settings.contentSettings.urlSlug,
             });
           }
+
+          // Set feature flags
+          if (settings.features) {
+            setFeatures({
+              calculators: settings.features.calculators,
+              bookmarks: settings.features.bookmarks,
+              search: settings.features.search,
+              userRegistration: settings.features.userRegistration,
+            });
+          }
         }
       } catch (error) {
-        console.error('Error loading content settings:', error);
+        console.error('Error loading settings:', error);
       }
     };
 
-    loadContentSettings();
+    loadSettings();
   }, []);
 
   const handleSignOut = async () => {
@@ -98,20 +128,45 @@ const Header: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-600 rounded-md flex items-center justify-center">
-              <span className="text-white font-bold text-lg">L</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900">{businessName}</span>
+            {logo ? (
+              <Image
+                src={logo}
+                alt={businessName || 'Logo'}
+                width={150}
+                height={48}
+                className="h-10 w-auto object-contain"
+                priority
+              />
+            ) : (
+              <>
+                <div className="w-8 h-8 bg-primary-600 rounded-md flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">
+                    {businessName ? businessName.charAt(0).toUpperCase() : 'L'}
+                  </span>
+                </div>
+                <span className="text-xl font-bold text-gray-900">{businessName}</span>
+              </>
+            )}
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/shop" className="text-gray-700 hover:text-primary-600 transition-colors">
-              Shop
-            </Link>
+            {serviceSettings && serviceSettings.enabled && (
+              <Link
+                href={`/${serviceSettings.urlSlug}`}
+                className="text-gray-700 hover:text-primary-600 transition-colors"
+              >
+                {serviceSettings.serviceNamePlural}
+              </Link>
+            )}
             {contentSettings && (
               <Link href={`/${contentSettings.urlSlug}`} className="text-gray-700 hover:text-primary-600 transition-colors">
                 {contentSettings.sectionNamePlural}
+              </Link>
+            )}
+            {features.calculators?.enabled && features.calculators?.showInNavigation && (
+              <Link href="/calculators" className="text-gray-700 hover:text-primary-600 transition-colors">
+                Calculators
               </Link>
             )}
             <Link href="/about" className="text-gray-700 hover:text-primary-600 transition-colors">
@@ -125,43 +180,33 @@ const Header: React.FC = () => {
           {/* Right Side - Search, Cart, User */}
           <div className="flex items-center gap-4">
             {/* Desktop Search Icon - Hidden on mobile */}
-            <button
-              onClick={() => setDesktopSearchOpen(!desktopSearchOpen)}
-              className="hidden md:block text-gray-700 hover:text-primary-600 transition-colors"
-              aria-label="Search"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
+            {features.search?.enabled && (
+              <button
+                onClick={() => setDesktopSearchOpen(!desktopSearchOpen)}
+                className="hidden md:block text-gray-700 hover:text-primary-600 transition-colors"
+                aria-label="Search"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            )}
 
             {/* Mobile Search Icon - Visible only on mobile */}
-            <button
-              onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-              className="md:hidden text-gray-700 hover:text-primary-600 transition-colors"
-              aria-label="Search"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
-
-            {/* Wishlist Icon - Hidden on mobile */}
-            {isAuthenticated && (
-              <Link href="/wishlist" className="hidden md:flex relative text-gray-700 hover:text-primary-600 transition-colors">
+            {features.search?.enabled && (
+              <button
+                onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
+                className="md:hidden text-gray-700 hover:text-primary-600 transition-colors"
+                aria-label="Search"
+              >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {wishlistCount}
-                  </span>
-                )}
-              </Link>
+              </button>
             )}
 
             {/* Bookmarks Icon - Hidden on mobile */}
-            {isAuthenticated && contentSettings && (
+            {isAuthenticated && contentSettings && features.bookmarks?.enabled && (
               <Link href="/bookmarks" className="hidden md:flex relative hover:opacity-80 transition-opacity">
                 {bookmarkCount > 0 ? (
                   <svg className="w-6 h-6 text-primary-600" fill="currentColor" viewBox="0 0 24 24">
@@ -174,21 +219,6 @@ const Header: React.FC = () => {
                 )}
               </Link>
             )}
-
-            {/* Cart Icon */}
-            <button
-              onClick={openCartDrawer}
-              className="relative text-gray-700 hover:text-primary-600 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              {uniqueItemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {uniqueItemCount}
-                </span>
-              )}
-            </button>
 
             {/* User Menu */}
             {isAuthenticated ? (
@@ -228,7 +258,7 @@ const Header: React.FC = () => {
                     >
                       Wishlist
                     </Link>
-                    {contentSettings && (
+                    {contentSettings && features.bookmarks?.enabled && (
                       <Link
                         href="/bookmarks"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -257,18 +287,20 @@ const Header: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="hidden md:flex items-center gap-2">
-                <Link href="/login">
-                  <Button variant="ghost" size="sm">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button variant="primary" size="sm">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
+              features.userRegistration?.enabled && (
+                <div className="hidden md:flex items-center gap-2">
+                  <Link href="/login">
+                    <Button variant="ghost" size="sm">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button variant="primary" size="sm">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </div>
+              )
             )}
 
             {/* Mobile Menu Button */}
@@ -291,9 +323,15 @@ const Header: React.FC = () => {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 animate-slide-down">
             <nav className="flex flex-col gap-4">
-              <Link href="/shop" className="text-gray-700 hover:text-primary-600 transition-colors">
-                Shop
-              </Link>
+              {serviceSettings && serviceSettings.enabled && (
+                <Link
+                  href={`/${serviceSettings.urlSlug}`}
+                  className="text-gray-700 hover:text-primary-600 transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {serviceSettings.serviceNamePlural}
+                </Link>
+              )}
               {contentSettings && (
                 <Link
                   href={`/${contentSettings.urlSlug}`}
@@ -303,13 +341,22 @@ const Header: React.FC = () => {
                   {contentSettings.sectionNamePlural}
                 </Link>
               )}
+              {features.calculators?.enabled && features.calculators?.showInNavigation && (
+                <Link
+                  href="/calculators"
+                  className="text-gray-700 hover:text-primary-600 transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Calculators
+                </Link>
+              )}
               <Link href="/about" className="text-gray-700 hover:text-primary-600 transition-colors">
                 About
               </Link>
               <Link href="/contact" className="text-gray-700 hover:text-primary-600 transition-colors">
                 Contact
               </Link>
-              {!isAuthenticated && (
+              {!isAuthenticated && features.userRegistration?.enabled && (
                 <>
                   <hr className="my-2" />
                   <Link href="/login">

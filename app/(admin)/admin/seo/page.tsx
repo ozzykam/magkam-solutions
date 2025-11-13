@@ -410,7 +410,7 @@ export default function SEOSettingsPage() {
                   onChange={setGlobalKeywords}
                   label="Default Keywords"
                   placeholder="Add a keyword..."
-                  helperText="Keywords that apply to your entire site (e.g., local products, fresh food)"
+                  helperText="Keywords that apply to your entire site (e.g., local services, fresh food)"
                   maxTags={15}
                   maxLength={30}
                 />
@@ -515,7 +515,7 @@ export default function SEOSettingsPage() {
           <Card>
             <div className="p-6">
               <SEOPreview
-                title={`${businessName} - Shop Fresh Local Products`}
+                title={`${businessName} - Shop Fresh Local Services`}
                 description={globalDescription || DEFAULT_SEO_SETTINGS.global.description}
                 url="yourstore.com"
               />
@@ -736,7 +736,7 @@ export default function SEOSettingsPage() {
                 Route Patterns
               </h2>
               <p className="text-gray-600 mb-6">
-                Configure SEO for groups of pages using wildcards (e.g., /products/*, /account/*).
+                Configure SEO for groups of pages using wildcards (e.g., /services/*, /account/*).
               </p>
 
               {/* List of patterns */}
@@ -781,7 +781,7 @@ export default function SEOSettingsPage() {
 
                   // Available variables per template type
                   const availableVars = {
-                    product: ['{name}', '{description}', '{categoryName}', '{vendorName}', '{businessName}'],
+                    service: ['{name}', '{description}', '{categoryName}', '{vendorName}', '{businessName}'],
                     category: ['{name}', '{description}', '{businessName}'],
                     vendor: ['{name}', '{description}', '{location}', '{businessName}'],
                     contentPost: ['{title}', '{excerpt}', '{authorName}', '{categoryName}', '{businessName}'],

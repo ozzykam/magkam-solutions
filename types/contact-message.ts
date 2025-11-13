@@ -18,4 +18,6 @@ export interface CreateContactMessageData {
   email: string;
   subject: string;
   message: string;
+  source?: string;
+  metadata?: Record<string, number | string | boolean>;
 }

@@ -12,7 +12,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Refund, RefundStatus, generateRefundNumber } from '@/types/refund';
-import { addRefundToOrder } from './order-service';
 
 const REFUNDS_COLLECTION = 'refunds';
 
@@ -222,30 +221,12 @@ export const processStripeRefund = async (
 
 /**
  * Complete a refund
+ * Add refund logic here
+ * ---------------
  * Called after Stripe confirms the refund
+ * 
  */
-export const completeRefund = async (refundId: string): Promise<void> => {
-  try {
-    const refund = await getRefundById(refundId);
-    if (!refund) {
-      throw new Error('Refund not found');
-    }
 
-    const docRef = doc(db, REFUNDS_COLLECTION, refundId);
-
-    await updateDoc(docRef, {
-      status: RefundStatus.COMPLETED,
-      completedAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
-
-    // Update the order with refund information
-    await addRefundToOrder(refund.orderId, refundId, refund.refundAmount);
-  } catch (error) {
-    console.error('Error completing refund:', error);
-    throw error;
-  }
-};
 
 /**
  * Mark refund as failed

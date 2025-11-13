@@ -7,30 +7,37 @@ import {
   updateDoc,
   deleteDoc,
   query,
-  where,
   orderBy,
   Timestamp,
   serverTimestamp,
+  DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { ContactMessage, CreateContactMessageData } from '@/types/contact-message';
 
 const MESSAGES_COLLECTION = 'contactMessages';
 
-// Helper to convert Firestore document to ContactMessage
-const docToMessage = (doc: any): ContactMessage => {
+/**
+ * Helper to convert Firestore document to ContactMessage
+ * Properly handles Timestamp conversion and validates data
+ */
+const docToMessage = (doc: DocumentSnapshot): ContactMessage => {
   const data = doc.data();
+  if (!data) {
+    throw new Error(`Document ${doc.id} has no data`);
+  }
+
   return {
     id: doc.id,
-    name: data.name,
-    email: data.email,
-    subject: data.subject,
-    message: data.message,
+    name: data.name || '',
+    email: data.email || '',
+    subject: data.subject || '',
+    message: data.message || '',
     isRead: data.isRead ?? false,
     isArchived: data.isArchived ?? false,
-    createdAt: data.createdAt,
-    readAt: data.readAt,
-    readBy: data.readBy,
+    createdAt: data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now(),
+    readAt: data.readAt instanceof Timestamp ? data.readAt : undefined,
+    readBy: data.readBy || undefined,
   };
 };
 
@@ -82,7 +89,7 @@ export const getAllContactMessages = async (options?: {
   excludeArchived?: boolean;
 }): Promise<ContactMessage[]> => {
   try {
-    let q = query(
+    const q = query(
       collection(db, MESSAGES_COLLECTION),
       orderBy('createdAt', 'desc')
     );

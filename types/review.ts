@@ -2,14 +2,14 @@ import { Timestamp } from 'firebase/firestore';
 
 export interface Review {
   id: string;
-  productId: string;
+  serviceId: string;
   userId: string;
   userName: string; // Denormalized for display
   userEmail: string; // Denormalized for display
   rating: number; // 1-5
   title?: string;
   comment: string;
-  verified: boolean; // True if user purchased the product
+  verified: boolean; // True if user purchased the service
   helpful: number; // Count of helpful votes
   createdAt: Timestamp;
   updatedAt: Timestamp;

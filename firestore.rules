@@ -38,12 +38,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Products collection
-    match /products/{productId} {
-      // Anyone can read products (public catalog)
+    // Services collection
+    match /services/{serviceId} {
+      // Anyone can read services (public catalog)
       allow read: if true;
 
-      // Only admins can create, update, or delete products
+      // Only admins can create, update, or delete services
       allow create, update, delete: if isAdmin();
     }
 
@@ -170,22 +170,6 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (cartId == request.auth.uid || isAdmin());
     }
 
-    // Time Slots collection
-    match /timeSlots/{slotId} {
-      // Anyone can read available time slots
-      allow read: if true;
-
-      // Admins can create time slots, users can create when needed
-      allow create: if isSignedIn();
-
-      // Signed-in users can update slots when making reservations
-      // Admins can update any slots
-      allow update: if isSignedIn();
-
-      // Only admins can delete time slots
-      allow delete: if isAdmin();
-    }
-
     // Store Settings collection
     match /storeSettings/{settingId} {
       // Anyone can read store settings (hours, etc.)
@@ -308,6 +292,30 @@ service cloud.firestore {
 
       // Only admins can create, update, or delete SEO settings
       allow create, update, delete: if isAdmin();
+    }
+
+    // Calculators collection
+    match /calculators/{calculatorId} {
+      // Anyone can read active calculators (public tools)
+      allow read: if true;
+
+      // Only admins can create, update, or delete calculators
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Calculator Submissions collection
+    match /calculatorSubmissions/{submissionId} {
+      // Only admins can read submissions
+      allow read: if isAdmin();
+
+      // Anyone can create a submission (submitting the calculator)
+      allow create: if true;
+
+      // Only admins can update submissions (change status)
+      allow update: if isAdmin();
+
+      // Only admins can delete submissions
+      allow delete: if isAdmin();
     }
   }
 }

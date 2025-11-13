@@ -41,14 +41,14 @@ export interface SEOSettings {
   };
 
   // Wildcard route patterns
-  // Key is the pattern, e.g., "/products/*", "/account/*"
+  // Key is the pattern, e.g., "/services/*", "/account/*"
   patterns: {
     [pattern: string]: SEOPageConfig;
   };
 
   // Dynamic page templates with variable substitution
   templates: {
-    product: SEOTemplateConfig;
+    service: SEOTemplateConfig;
     category: SEOTemplateConfig;
     vendor: SEOTemplateConfig;
     contentPost: SEOTemplateConfig;
@@ -61,7 +61,7 @@ export interface SEOSettings {
 /**
  * Template variable types for type safety
  */
-export interface ProductTemplateVariables {
+export interface ServiceTemplateVariables {
   name: string;
   categoryName: string;
   vendorName: string;
@@ -73,7 +73,7 @@ export interface ProductTemplateVariables {
 export interface CategoryTemplateVariables {
   name: string;
   description: string;
-  productCount: string;
+  serviceCount: string;
   businessName: string;
 }
 
@@ -93,7 +93,7 @@ export interface ContentPostTemplateVariables {
 }
 
 export type TemplateVariables =
-  | ProductTemplateVariables
+  | ServiceTemplateVariables
   | CategoryTemplateVariables
   | VendorTemplateVariables
   | ContentPostTemplateVariables
@@ -102,7 +102,7 @@ export type TemplateVariables =
 /**
  * SEO Template Type Union
  */
-export type SEOTemplateType = 'product' | 'category' | 'vendor' | 'contentPost';
+export type SEOTemplateType = 'service' | 'category' | 'vendor' | 'contentPost';
 
 /**
  * Default SEO Settings
@@ -111,21 +111,21 @@ export type SEOTemplateType = 'product' | 'category' | 'vendor' | 'contentPost';
 export const DEFAULT_SEO_SETTINGS: Omit<SEOSettings, 'updatedAt'> = {
   global: {
     keywords: [
-      'local products',
+      'local services',
       'fresh food',
       'farmers market',
       'organic',
       'local delivery',
       'farm to table',
     ],
-    description: 'Shop fresh, local products from trusted vendors in your community.',
+    description: 'Shop fresh, local services from trusted vendors in your community.',
     twitterCard: 'summary_large_image',
   },
   pages: {
     '/shop': {
-      title: 'Shop All Products | {businessName}',
-      description: 'Browse our complete selection of fresh, local products. Filter by category, vendor, and tags to find exactly what you need.',
-      keywords: ['shop', 'products', 'buy online', 'local shopping', 'browse'],
+      title: 'Shop All Services | {businessName}',
+      description: 'Browse our complete selection of fresh, local services. Filter by category, vendor, and tags to find exactly what you need.',
+      keywords: ['shop', 'services', 'buy online', 'local shopping', 'browse'],
     },
     '/about': {
       title: 'About Us | {businessName}',
@@ -171,19 +171,19 @@ export const DEFAULT_SEO_SETTINGS: Omit<SEOSettings, 'updatedAt'> = {
     },
   },
   templates: {
-    product: {
+    service: {
       titleTemplate: '{name} - {categoryName} | {businessName}',
       descriptionTemplate: '{description}',
-      keywords: ['product', 'buy', 'shop', 'local', 'fresh'],
+      keywords: ['service', 'buy', 'shop', 'local', 'fresh'],
     },
     category: {
       titleTemplate: '{name} | {businessName}',
-      descriptionTemplate: 'Shop {name} products from local vendors. {description}',
-      keywords: ['category', 'browse', 'shop by category', 'products'],
+      descriptionTemplate: 'Shop {name} services from local vendors. {description}',
+      keywords: ['category', 'browse', 'shop by category', 'services'],
     },
     vendor: {
       titleTemplate: '{name} - Local Vendor | {businessName}',
-      descriptionTemplate: 'Shop products from {name}. {description}',
+      descriptionTemplate: 'Shop services from {name}. {description}',
       keywords: ['vendor', 'local farmer', 'producer', 'supplier'],
     },
     contentPost: {

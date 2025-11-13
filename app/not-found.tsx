@@ -42,7 +42,7 @@ export default function NotFound() {
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-red-600 font-semibold rounded-lg border-2 border-red-600 hover:bg-red-50 transition-colors"
           >
             <ShoppingBagIcon className="w-5 h-5" />
-            Browse Products
+            Browse Services
           </Link>
         </div>
 
@@ -54,7 +54,7 @@ export default function NotFound() {
               href="/shop"
               className="text-red-600 hover:text-red-700 font-medium hover:underline"
             >
-              Shop All Products
+              Shop All Services
             </Link>
             <span className="text-gray-300">•</span>
             <Link
@@ -85,7 +85,7 @@ export default function NotFound() {
           <div className="flex items-center justify-center gap-2 text-blue-900">
             <MagnifyingGlassIcon className="w-5 h-5" />
             <p className="text-sm font-medium">
-              Looking for a specific product? Try searching from the homepage.
+              Looking for a specific service? Try searching from the homepage.
             </p>
           </div>
         </div>

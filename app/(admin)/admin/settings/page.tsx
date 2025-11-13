@@ -69,20 +69,6 @@ export default function SettingsPage() {
     setSettings({ ...settings, [field]: value } as StoreSettings);
   };
 
-  const updateOperatingHours = (day: string, field: string, value: string | boolean) => {
-    if (!settings) return;
-    setSettings({
-      ...settings,
-      operatingHours: {
-        ...settings.operatingHours,
-        [day]: {
-          ...settings.operatingHours[day],
-          [field]: value,
-        },
-      },
-    });
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -98,16 +84,6 @@ export default function SettingsPage() {
       </div>
     );
   }
-
-  const days = [
-    { key: '0', label: 'Sunday' },
-    { key: '1', label: 'Monday' },
-    { key: '2', label: 'Tuesday' },
-    { key: '3', label: 'Wednesday' },
-    { key: '4', label: 'Thursday' },
-    { key: '5', label: 'Friday' },
-    { key: '6', label: 'Saturday' },
-  ];
 
   const updateAddress = (field: 'street' | 'city' | 'state' | 'zipCode', value: string) => {
     if (!settings) return;
@@ -138,6 +114,20 @@ export default function SettingsPage() {
     });
   };
 
+  const updateServiceSettings = (field: string, value: string | boolean) => {
+    if (!settings) return;
+    setSettings({
+      ...settings,
+      serviceSettings: {
+        enabled: settings.serviceSettings?.enabled ?? true,
+        serviceName: settings.serviceSettings?.serviceName || 'Service',
+        serviceNamePlural: settings.serviceSettings?.serviceNamePlural || 'Services',
+        urlSlug: settings.serviceSettings?.urlSlug || 'services',
+        [field]: value,
+      },
+    });
+  };
+
   const updateContentSettings = (field: string, value: string | boolean) => {
     if (!settings) return;
     setSettings({
@@ -146,8 +136,8 @@ export default function SettingsPage() {
         enabled: settings.contentSettings?.enabled ?? true,
         sectionName: settings.contentSettings?.sectionName || 'Blog',
         sectionNamePlural: settings.contentSettings?.sectionNamePlural || 'Blog Posts',
-        itemsLabel: settings.contentSettings?.itemsLabel || 'Featured Products',
-        itemsLabelSingular: settings.contentSettings?.itemsLabelSingular || 'Featured Product',
+        itemsLabel: settings.contentSettings?.itemsLabel || 'Featured Services',
+        itemsLabelSingular: settings.contentSettings?.itemsLabelSingular || 'Featured Service',
         urlSlug: settings.contentSettings?.urlSlug || 'blog',
         showAuthor: settings.contentSettings?.showAuthor ?? true,
         showViewCount: settings.contentSettings?.showViewCount ?? false,
@@ -183,8 +173,8 @@ export default function SettingsPage() {
       blog: {
         sectionName: 'Blog Post',
         sectionNamePlural: 'Blog Posts',
-        itemsLabel: 'Featured Products',
-        itemsLabelSingular: 'Featured Product',
+        itemsLabel: 'Featured Services',
+        itemsLabelSingular: 'Featured Service',
         urlSlug: 'blog',
       },
     };
@@ -209,8 +199,8 @@ export default function SettingsPage() {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Store Settings</h1>
-        <p className="text-gray-600 mt-1">Configure business information, store hours, and time slot capacity</p>
+        <h1 className="text-3xl font-bold text-gray-900">Business Settings</h1>
+        <p className="text-gray-600 mt-1">Configure business information, content settings, and preferences</p>
       </div>
 
       {/* Business Information */}
@@ -292,117 +282,6 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* Delivery Settings */}
-      <Card>
-        <div className="p-6 space-y-6">
-          <h2 className="text-lg font-semibold text-gray-900">Delivery Settings</h2>
-          <p className="text-sm text-gray-600">Configure delivery radius and availability</p>
-
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="deliveryEnabled"
-              checked={settings.deliveryEnabled ?? true}
-              onChange={(e) => updateSetting('deliveryEnabled', e.target.checked)}
-              className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-            />
-            <label htmlFor="deliveryEnabled" className="text-sm font-medium text-gray-700">
-              Enable Delivery Service
-            </label>
-          </div>
-
-          {settings.deliveryEnabled !== false && (
-            <>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> Delivery radius is calculated from your store&apos;s address above.
-                  Make sure your store address is accurate before setting the delivery radius.
-                </p>
-              </div>
-
-              <Input
-                label="Delivery Radius (miles)"
-                type="number"
-                min="1"
-                max="100"
-                step="0.5"
-                value={settings.deliveryRadius || ''}
-                onChange={(e) => updateSetting('deliveryRadius', parseFloat(e.target.value) || 0)}
-                placeholder="10"
-                helperText="Maximum distance from your store for deliveries (e.g., 10 miles)"
-              />
-
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <p className="text-sm font-medium text-gray-700">
-                    Store Coordinates:
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      if (!settings.address?.street || !settings.address?.city || !settings.address?.state || !settings.address?.zipCode) {
-                        alert('Please fill in your complete store address first');
-                        return;
-                      }
-
-                      if (!confirm('This will update your store location based on the current address. Continue?')) {
-                        return;
-                      }
-
-                      try {
-                        const response = await fetch('/api/geocode', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            address: `${settings.address.street}, ${settings.address.city}, ${settings.address.state} ${settings.address.zipCode}`
-                          }),
-                        });
-
-                        const data = await response.json();
-
-                        if (data.latitude && data.longitude) {
-                          setSettings({
-                            ...settings,
-                            storeLocation: {
-                              latitude: data.latitude,
-                              longitude: data.longitude,
-                            },
-                          } as StoreSettings);
-                          alert('Store location updated successfully!');
-                        } else {
-                          alert('Could not geocode address. Please verify the address is correct.');
-                        }
-                      } catch (error) {
-                        console.error('Error geocoding:', error);
-                        alert('Failed to geocode address');
-                      }
-                    }}
-                  >
-                    {settings.storeLocation ? 'Update Location' : 'Set Location'}
-                  </Button>
-                </div>
-
-                {settings.storeLocation ? (
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p>Latitude: {settings.storeLocation.latitude.toFixed(6)}</p>
-                    <p>Longitude: {settings.storeLocation.longitude.toFixed(6)}</p>
-                    <p className="text-xs text-green-600 mt-2">✓ Location verified</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-sm text-orange-600">
-                      Store location not set. Click the button above to geocode your store address.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      </Card>
-
       {/* Social Media */}
       <Card>
         <div className="p-6 space-y-6">
@@ -455,6 +334,125 @@ export default function SettingsPage() {
               helperText="Full URL to your YouTube channel"
             />
           </div>
+        </div>
+      </Card>
+
+      {/* Service Settings */}
+      <Card>
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Service Settings</h2>
+              <p className="text-sm text-gray-600 mt-1">Configure how your services/products/offerings are labeled</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Enabled</span>
+              <input
+                type="checkbox"
+                checked={settings.serviceSettings?.enabled ?? true}
+                onChange={(e) => updateServiceSettings('enabled', e.target.checked)}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+            </div>
+          </div>
+
+          {settings.serviceSettings?.enabled !== false && (
+            <>
+              {/* Quick Templates */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quick Presets (optional)
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateServiceSettings('serviceName', 'Service');
+                      updateServiceSettings('serviceNamePlural', 'Services');
+                      updateServiceSettings('urlSlug', 'services');
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+                  >
+                    Services
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateServiceSettings('serviceName', 'Product');
+                      updateServiceSettings('serviceNamePlural', 'Products');
+                      updateServiceSettings('urlSlug', 'products');
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+                  >
+                    Products
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateServiceSettings('serviceName', 'Solution');
+                      updateServiceSettings('serviceNamePlural', 'Solutions');
+                      updateServiceSettings('urlSlug', 'solutions');
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+                  >
+                    Solutions
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateServiceSettings('serviceName', 'Offering');
+                      updateServiceSettings('serviceNamePlural', 'Offerings');
+                      updateServiceSettings('urlSlug', 'offerings');
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+                  >
+                    Offerings
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  Click a preset to apply it, or customize manually below
+                </p>
+              </div>
+
+              {/* Custom Labels */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Name (Singular)"
+                  value={settings.serviceSettings?.serviceName || 'Service'}
+                  onChange={(e) => updateServiceSettings('serviceName', e.target.value)}
+                  placeholder="Service, Product, Solution"
+                  helperText="e.g., 'Service' or 'Product'"
+                />
+
+                <Input
+                  label="Name (Plural)"
+                  value={settings.serviceSettings?.serviceNamePlural || 'Services'}
+                  onChange={(e) => updateServiceSettings('serviceNamePlural', e.target.value)}
+                  placeholder="Services, Products, Solutions"
+                  helperText="e.g., 'Services' or 'Products'"
+                />
+
+                <Input
+                  label="URL Slug"
+                  value={settings.serviceSettings?.urlSlug || 'services'}
+                  onChange={(e) => updateServiceSettings('urlSlug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                  placeholder="services, products, solutions"
+                  helperText="Used in URLs (e.g., /services)"
+                />
+              </div>
+
+              {/* Preview */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Preview</h3>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>• Navigation: "View {settings.serviceSettings?.serviceNamePlural || 'Services'}"</p>
+                  <p>• Page Title: "{settings.serviceSettings?.serviceNamePlural || 'Services'}"</p>
+                  <p>• Button: "Add {settings.serviceSettings?.serviceName || 'Service'}"</p>
+                  <p>• URL: /{settings.serviceSettings?.urlSlug || 'services'}</p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </Card>
 
@@ -539,7 +537,7 @@ export default function SettingsPage() {
 
                 <Input
                   label="Items Label (Singular)"
-                  value={settings.contentSettings?.itemsLabelSingular || 'Featured Product'}
+                  value={settings.contentSettings?.itemsLabelSingular || 'Featured Service'}
                   onChange={(e) => updateContentSettings('itemsLabelSingular', e.target.value)}
                   placeholder="Ingredient, Featured Piece, Material"
                   helperText="e.g., 'Ingredient' or 'Featured Piece'"
@@ -547,7 +545,7 @@ export default function SettingsPage() {
 
                 <Input
                   label="Items Label (Plural)"
-                  value={settings.contentSettings?.itemsLabel || 'Featured Products'}
+                  value={settings.contentSettings?.itemsLabel || 'Featured Services'}
                   onChange={(e) => updateContentSettings('itemsLabel', e.target.value)}
                   placeholder="Ingredients, Featured Pieces, Materials"
                   helperText="e.g., 'Ingredients' or 'Featured Pieces'"
@@ -615,126 +613,6 @@ export default function SettingsPage() {
             placeholder="orders@yourbusiness.com"
             helperText="Email address to receive notifications when new orders are placed"
           />
-        </div>
-      </Card>
-
-      {/* Capacity Settings */}
-      <Card>
-        <div className="p-6 space-y-6">
-          <h2 className="text-lg font-semibold text-gray-900">Time Slot Capacity</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Max Orders Per Hour"
-              type="number"
-              min="1"
-              value={settings.maxOrdersPerHour}
-              onChange={(e) => updateSetting('maxOrdersPerHour', parseInt(e.target.value))}
-              helperText="Maximum number of orders that can be accepted per time slot"
-            />
-
-            <Input
-              label="Max Items Per Hour"
-              type="number"
-              min="1"
-              value={settings.maxItemsPerHour}
-              onChange={(e) => updateSetting('maxItemsPerHour', parseInt(e.target.value))}
-              helperText="Maximum number of total items per time slot"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Slot Duration (minutes)"
-              type="number"
-              min="15"
-              step="15"
-              value={settings.slotDurationMinutes}
-              onChange={(e) => updateSetting('slotDurationMinutes', parseInt(e.target.value))}
-              helperText="Length of each time slot (recommended: 60)"
-            />
-
-            <Input
-              label="Advance Booking Days"
-              type="number"
-              min="1"
-              max="30"
-              value={settings.advanceBookingDays}
-              onChange={(e) => updateSetting('advanceBookingDays', parseInt(e.target.value))}
-              helperText="How far in advance customers can book"
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Operating Hours */}
-      <Card>
-        <div className="p-6 space-y-6">
-          <h2 className="text-lg font-semibold text-gray-900">Operating Hours</h2>
-
-          <div className="space-y-4">
-            {days.map(({ key, label }) => (
-              <div key={key} className="flex items-center gap-4">
-                <div className="w-32">
-                  <p className="text-sm font-medium text-gray-700">{label}</p>
-                </div>
-
-                <div className="flex items-center gap-2 flex-1">
-                  <input
-                    type="checkbox"
-                    checked={!settings.operatingHours[key].closed}
-                    onChange={(e) => updateOperatingHours(key, 'closed', !e.target.checked)}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-gray-600 mr-4">Open</span>
-
-                  {!settings.operatingHours[key].closed && (
-                    <>
-                      <input
-                        type="time"
-                        value={settings.operatingHours[key].open}
-                        onChange={(e) => updateOperatingHours(key, 'open', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      />
-                      <span className="text-sm text-gray-600">to</span>
-                      <input
-                        type="time"
-                        value={settings.operatingHours[key].close}
-                        onChange={(e) => updateOperatingHours(key, 'close', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      />
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Card>
-
-      {/* Blackout Dates */}
-      <Card>
-        <div className="p-6 space-y-6">
-          <h2 className="text-lg font-semibold text-gray-900">Blackout Dates</h2>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Closed Dates (comma-separated YYYY-MM-DD)
-            </label>
-            <textarea
-              value={settings.blackoutDates.join(', ')}
-              onChange={(e) => {
-                const dates = e.target.value.split(',').map(d => d.trim()).filter(Boolean);
-                updateSetting('blackoutDates', dates);
-              }}
-              rows={3}
-              placeholder="2025-12-25, 2025-01-01"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Enter dates when the store will be closed (holidays, etc.)
-            </p>
-          </div>
         </div>
       </Card>
 

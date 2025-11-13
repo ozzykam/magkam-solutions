@@ -129,6 +129,7 @@ export const resetPassword = async (email: string): Promise<void> => {
   try {
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
+    console.error('Password reset error:', error);
     throw new Error('Failed to send password reset email');
   }
 };

@@ -85,6 +85,22 @@ rules_version = '2';
                        request.resource.size < 10 * 1024 * 1024;
       }
 
+      // Branding folder (logos, favicons)
+      match /branding/{folder}/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() &&
+                       request.resource.size < 5 * 1024 * 1024 &&
+                       request.resource.contentType.matches('image/.*');
+      }
+
+      // Services images
+      match /services/{imageId} {
+        allow read: if true;
+        allow write: if isSignedIn() &&
+                       request.resource.size < 5 * 1024 * 1024 &&
+                       request.resource.contentType.matches('image/.*');
+      }
+
       // Default deny
       match /{allPaths=**} {
         allow read, write: if false;

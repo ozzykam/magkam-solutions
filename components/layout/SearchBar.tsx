@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { getProducts } from '@/services/product-service';
+import { getServices } from '@/services/service-service';
 import { getContentPosts } from '@/services/content-service';
-import { Product } from '@/types/product';
+import { Service } from '@/types/service';
 import { ContentPost } from '@/types/content';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
@@ -20,7 +20,7 @@ interface SearchBarProps {
 }
 
 interface SearchResults {
-  products: Product[];
+  services: Service[];
   contentPosts: ContentPost[];
 }
 
@@ -32,7 +32,7 @@ export default function SearchBar({
   const [internalIsExpanded, setInternalIsExpanded] = useState(false);
   const isExpanded = externalIsExpanded !== undefined ? externalIsExpanded : internalIsExpanded;
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResults>({ products: [], contentPosts: [] });
+  const [searchResults, setSearchResults] = useState<SearchResults>({ services: [], contentPosts: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [contentSlug, setContentSlug] = useState('blog');
@@ -61,17 +61,16 @@ export default function SearchBar({
     loadContentSettings();
   }, []);
 
-  // Search function for products - matches ShopContent logic
-  const searchProducts = (products: Product[], query: string): Product[] => {
+  // Search function for services - matches ShopContent logic
+  const searchServices = (services: Service[], query: string): Service[] => {
     if (!query.trim()) return [];
 
     const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
 
-    return products.filter(product => {
-      const productName = product.name.toLowerCase();
-      const productTags = product.tags.map(tag => tag.toLowerCase());
-      const productDescription = product.description.toLowerCase();
-      const allSearchableText = [productName, productDescription, ...productTags].join(' ');
+    return services.filter(service => {
+      const serviceName = service.name.toLowerCase();
+      const serviceDescription = service.description.toLowerCase();
+      const allSearchableText = [serviceName, serviceDescription].join(' ');
 
       // Check if any search term matches (supports singular/plural)
       return searchTerms.some(term => {
@@ -133,7 +132,7 @@ export default function SearchBar({
   // Debounced search
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setSearchResults({ products: [], contentPosts: [] });
+      setSearchResults({ services: [], contentPosts: [] });
       setShowResults(false);
       return;
     }
@@ -141,21 +140,21 @@ export default function SearchBar({
     setIsLoading(true);
     const timer = setTimeout(async () => {
       try {
-        // Fetch products and content posts in parallel
-        const [allProducts, allContentPosts] = await Promise.all([
-          getProducts(),
+        // Fetch services and content posts in parallel
+        const [allServices, allContentPosts] = await Promise.all([
+          getServices(),
           contentEnabled ? getContentPosts(true) : Promise.resolve([]),
         ]);
 
-        // Filter to active products only
-        const activeProducts = allProducts.filter(p => p.isActive);
+        // Filter to active services only
+        const activeServices = allServices.filter(p => p.isActive);
 
         // Search both
-        const productResults = searchProducts(activeProducts, searchQuery);
+        const serviceResults = searchServices(activeServices, searchQuery);
         const contentResults = searchContentPosts(allContentPosts, searchQuery);
 
-        // Sort products (featured first, then by name)
-        productResults.sort((a, b) => {
+        // Sort services (featured first, then by name)
+        serviceResults.sort((a, b) => {
           if (a.isFeatured && !b.isFeatured) return -1;
           if (!a.isFeatured && b.isFeatured) return 1;
           return a.name.localeCompare(b.name);
@@ -170,13 +169,13 @@ export default function SearchBar({
 
         // Take top 5 from each (or split to max 5 total)
         setSearchResults({
-          products: productResults.slice(0, 3),
+          services: serviceResults.slice(0, 3),
           contentPosts: contentResults.slice(0, 2),
         });
         setShowResults(true);
       } catch (error) {
         console.error('Error searching:', error);
-        setSearchResults({ products: [], contentPosts: [] });
+        setSearchResults({ services: [], contentPosts: [] });
       } finally {
         setIsLoading(false);
       }
@@ -263,7 +262,7 @@ export default function SearchBar({
     setShowResults(false);
   };
 
-  const hasResults = searchResults.products.length > 0 || searchResults.contentPosts.length > 0;
+  const hasResults = searchResults.services.length > 0 || searchResults.contentPosts.length > 0;
 
   return (
     <div ref={searchRef} className={`relative ${className}`}>
@@ -286,7 +285,7 @@ export default function SearchBar({
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Search products and content..."
+              placeholder="Search services and content..."
               className="w-full px-4 py-4"
               style={{
                 outline: 'none',
@@ -313,61 +312,55 @@ export default function SearchBar({
                 </div>
               ) : hasResults ? (
                 <>
-                  {/* Products Section */}
-                  {searchResults.products.length > 0 && (
+                  {/* Services Section */}
+                  {searchResults.services.length > 0 && (
                     <div className="py-2">
                       <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Products
+                        Services
                       </div>
-                      {searchResults.products.map((product) => {
-                        const displayPrice = product.onSale && product.salePrice
-                          ? product.salePrice
-                          : product.price;
-                        const isOutOfStock = product.stock === 0;
+                      {searchResults.services.map((service) => {
+                        const displayPrice = service.onSale && service.salePrice
+                          ? service.salePrice
+                          : service.basePrice;
 
                         return (
                           <Link
-                            key={product.id}
-                            href={`/products/${product.slug}`}
+                            key={service.id}
+                            href={`/services/${service.slug}`}
                             onClick={handleResultClick}
                             className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
                           >
-                            {/* Product Image */}
-                            {product.images[0] && (
+                            {/* Service Image */}
+                            {service.images[0] && (
                               <div className="relative w-12 h-12 flex-shrink-0 bg-gray-100 rounded">
                                 <Image
-                                  src={product.images[0]}
-                                  alt={product.name}
+                                  src={service.images[0]}
+                                  alt={service.name}
                                   fill
                                   className="object-cover rounded"
                                 />
                               </div>
                             )}
 
-                            {/* Product Info */}
+                            {/* Service Info */}
                             <div className="flex-grow min-w-0">
                               <h4 className="text-sm font-medium text-gray-900 truncate">
-                                {product.name}
+                                {service.name}
                               </h4>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-sm font-semibold text-primary-600">
-                                  ${displayPrice.toFixed(2)}
+                                  ${displayPrice?.toFixed(2)}
                                 </span>
-                                {product.onSale && product.salePrice && (
+                                {service.onSale && service.salePrice && (
                                   <span className="text-xs text-gray-500 line-through">
-                                    ${product.price.toFixed(2)}
-                                  </span>
-                                )}
-                                {isOutOfStock && (
-                                  <span className="text-xs text-red-600 font-medium">
-                                    Out of stock
+                                    ${service.basePrice?.toFixed(2)}
                                   </span>
                                 )}
                               </div>
                             </div>
 
                             {/* Featured Badge */}
-                            {product.isFeatured && (
+                            {service.isFeatured && (
                               <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded">
                                 Featured
                               </span>
@@ -381,7 +374,7 @@ export default function SearchBar({
                           onClick={handleViewMore}
                           className="block text-center text-sm font-medium text-primary-600 hover:text-primary-700"
                         >
-                          View all products for &quot;{searchQuery}&quot;
+                          View all services for &quot;{searchQuery}&quot;
                         </Link>
                       </div>
                     </div>
@@ -389,7 +382,7 @@ export default function SearchBar({
 
                   {/* Content Posts Section */}
                   {searchResults.contentPosts.length > 0 && (
-                    <div className={`py-2 ${searchResults.products.length > 0 ? 'border-t border-gray-200' : ''}`}>
+                    <div className={`py-2 ${searchResults.services.length > 0 ? 'border-t border-gray-200' : ''}`}>
                       <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                         Content
                       </div>

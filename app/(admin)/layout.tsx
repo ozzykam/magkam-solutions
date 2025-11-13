@@ -3,14 +3,16 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { UserRole } from '@/types';
+import { StoreSettings } from '@/types/business-info';
 import { getUnreadMessageCount } from '@/services/contact-message-service';
 import {
   ShoppingCartIcon,
   UsersIcon,
   Cog6ToothIcon,
-  TagIcon,
   CubeIcon,
   ChartBarIcon,
   ClockIcon,
@@ -23,6 +25,10 @@ import {
   PencilSquareIcon,
   PresentationChartLineIcon,
   RocketLaunchIcon,
+  CalculatorIcon,
+  HomeIcon,
+  DocumentTextIcon,
+  AdjustmentsHorizontalIcon,
 } from '@heroicons/react/24/outline';
 
 export default function AdminLayout({
@@ -34,6 +40,7 @@ export default function AdminLayout({
   const { user, loading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [serviceLabel, setServiceLabel] = useState('Services');
 
   useEffect(() => {
     // Redirect if not admin or loading finished
@@ -41,6 +48,25 @@ export default function AdminLayout({
       router.push('/');
     }
   }, [user, loading, router]);
+
+  // Load service label from settings
+  useEffect(() => {
+    const loadServiceLabel = async () => {
+      try {
+        const settingsDoc = await getDoc(doc(db, 'storeSettings', 'main'));
+        if (settingsDoc.exists()) {
+          const settings = settingsDoc.data() as StoreSettings;
+          if (settings.serviceSettings?.serviceNamePlural) {
+            setServiceLabel(settings.serviceSettings.serviceNamePlural);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading service label:', error);
+      }
+    };
+
+    loadServiceLabel();
+  }, []);
 
   // Load unread message count
   useEffect(() => {
@@ -110,18 +136,8 @@ export default function AdminLayout({
               </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/products" icon={CubeIcon}>
-                Products
-              </NavLink>
-            </div>
-            <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/categories" icon={TagIcon}>
-                Product Categories
-              </NavLink>
-            </div>
-            <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/orders" icon={ShoppingCartIcon}>
-                Orders
+              <NavLink href="/admin/services" icon={CubeIcon}>
+                {serviceLabel}
               </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
@@ -130,18 +146,8 @@ export default function AdminLayout({
               </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/content-categories" icon={PencilSquareIcon}>
+              <NavLink href="/admin/content-categories" icon={DocumentTextIcon}>
                 Content Categories
-              </NavLink>
-            </div>
-            <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/fulfillment" icon={ClipboardDocumentCheckIcon}>
-                Order Fulfillment
-              </NavLink>
-            </div>
-            <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/timeslots" icon={ClockIcon}>
-                Time Slots
               </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
@@ -150,13 +156,8 @@ export default function AdminLayout({
               </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/vendors" icon={BuildingStorefrontIcon}>
-                Vendors
-              </NavLink>
-            </div>
-            <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/tags" icon={HashtagIcon}>
-                Tags
+              <NavLink href="/admin/calculators" icon={CalculatorIcon}>
+                Calculators
               </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
@@ -194,8 +195,28 @@ export default function AdminLayout({
               </p>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/presets" icon={CubeIcon}>
+                Business Presets
+              </NavLink>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/theme" icon={PencilSquareIcon}>
+                Theme & Branding
+              </NavLink>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/homepage" icon={HomeIcon}>
+                Homepage Settings
+              </NavLink>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/features" icon={AdjustmentsHorizontalIcon}>
+                Feature Management
+              </NavLink>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
               <NavLink href="/admin/settings" icon={Cog6ToothIcon}>
-                General Settings
+                Business Settings
               </NavLink>
             </div>
           </div>

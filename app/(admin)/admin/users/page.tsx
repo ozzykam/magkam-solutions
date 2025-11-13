@@ -13,9 +13,7 @@ import {
   updateUserRole,
   deleteUser,
 } from '@/services/user-service';
-import { getUserOrders } from '@/services/order-service';
 import { User, UserRole, DEFAULT_EMPLOYEE_PERMISSIONS, DEFAULT_MANAGER_PERMISSIONS } from '@/types/user';
-import { Order } from '@/types/order';
 import {
   MagnifyingGlassIcon,
   EyeIcon,
@@ -23,7 +21,6 @@ import {
   UserCircleIcon,
   EnvelopeIcon,
   CalendarIcon,
-  ShoppingBagIcon,
 } from '@heroicons/react/24/outline';
 
 export default function CustomersPage() {
@@ -37,9 +34,6 @@ export default function CustomersPage() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [userOrders, setUserOrders] = useState<Order[]>([]);
-  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-
   // Role change state
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [roleChangeUser, setRoleChangeUser] = useState<User | null>(null);
@@ -92,23 +86,11 @@ export default function CustomersPage() {
   const handleViewUser = async (user: User) => {
     setSelectedUser(user);
     setIsModalOpen(true);
-    setIsLoadingOrders(true);
-
-    try {
-      const orders = await getUserOrders(user.uid);
-      setUserOrders(orders);
-    } catch (error) {
-      console.error('Error loading user orders:', error);
-      showToast('Failed to load user orders', 'error');
-    } finally {
-      setIsLoadingOrders(false);
-    }
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedUser(null);
-    setUserOrders([]);
   };
 
   const handleOpenRoleModal = (user: User) => {
@@ -380,42 +362,6 @@ export default function CustomersPage() {
                   <p className="text-sm font-medium text-gray-900">{formatDate(selectedUser.updatedAt)}</p>
                 </div>
               </div>
-            </div>
-
-            {/* Order History */}
-            <div className="pt-4 border-t border-gray-200">
-              <div className="flex items-center gap-2 mb-3">
-                <ShoppingBagIcon className="h-5 w-5 text-gray-600" />
-                <h4 className="font-semibold text-gray-900">Order History</h4>
-              </div>
-
-              {isLoadingOrders ? (
-                <div className="flex items-center justify-center py-8">
-                  <LoadingSpinner size="md" />
-                </div>
-              ) : userOrders.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4">No orders yet</p>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {userOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{order.orderNumber}</p>
-                        <p className="text-xs text-gray-500">{formatDate(order.createdAt)}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900">${order.total.toFixed(2)}</p>
-                        <Badge variant={order.status === 'completed' ? 'success' : 'default'} size="sm">
-                          {order.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Addresses */}

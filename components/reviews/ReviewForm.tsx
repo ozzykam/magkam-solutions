@@ -8,14 +8,14 @@ import { Review } from '@/types/review';
 import { useAuth } from '@/lib/contexts/AuthContext';
 
 interface ReviewFormProps {
-  productId: string;
+  serviceId: string;
   existingReview?: Review;
   onSubmit: (review: Partial<Review>) => Promise<void>;
   onCancel?: () => void;
 }
 
 const ReviewForm: React.FC<ReviewFormProps> = ({
-  productId,
+  serviceId,
   existingReview,
   onSubmit,
   onCancel,
@@ -55,14 +55,14 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
 
     try {
       const reviewData: Partial<Review> = {
-        productId,
+        serviceId,
         userId: user.uid,
         userName: user.name,
         userEmail: user.email,
         rating,
         title: title.trim() || undefined,
         comment: comment.trim(),
-        verified: false, // TODO: Check if user purchased product
+        verified: false, // TODO: Check if user purchased service
       };
 
       await onSubmit(reviewData);
@@ -133,7 +133,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       {/* Comment */}
       <Textarea
         label="Your Review"
-        placeholder="Share your thoughts about this product..."
+        placeholder="Share your thoughts about this service..."
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         error={errors.comment}

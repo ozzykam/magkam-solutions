@@ -11,7 +11,6 @@ export enum RefundStatus {
 
 export enum RefundReason {
   CUSTOMER_REQUEST = 'customer_request',
-  DAMAGED_PRODUCT = 'damaged_product',
   WRONG_ITEM = 'wrong_item',
   MISSING_ITEM = 'missing_item',
   QUALITY_ISSUE = 'quality_issue',
@@ -20,8 +19,8 @@ export enum RefundReason {
 }
 
 export interface RefundItem {
-  productId: string;
-  productName: string;
+  serviceId: string;
+  serviceName: string;
   price: number;              // Original price
   quantity: number;           // Quantity being refunded
   refundAmount: number;       // Total refund for this item
@@ -90,7 +89,6 @@ export const getRefundStatusInfo = (status: RefundStatus): { label: string; colo
 export const getRefundReasonText = (reason: RefundReason): string => {
   const reasonMap: Record<RefundReason, string> = {
     [RefundReason.CUSTOMER_REQUEST]: 'Customer Request',
-    [RefundReason.DAMAGED_PRODUCT]: 'Damaged Product',
     [RefundReason.WRONG_ITEM]: 'Wrong Item Received',
     [RefundReason.MISSING_ITEM]: 'Missing Item',
     [RefundReason.QUALITY_ISSUE]: 'Quality Issue',

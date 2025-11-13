@@ -1,13 +1,13 @@
-# Product Image Upload System
+# Service Image Upload System
 
 ## Features
 
-The ImageUploader component provides a comprehensive image management system for products:
+The ImageUploader component provides a comprehensive image management system for services:
 
 ### ✨ Key Features
 
 1. **Multiple Image Upload**
-   - Upload up to 5 images per product (configurable)
+   - Upload up to 5 images per service (configurable)
    - Drag-and-drop support
    - Click to browse files
    - Real-time upload progress bars
@@ -15,7 +15,7 @@ The ImageUploader component provides a comprehensive image management system for
 2. **Featured Image Selection**
    - First image is automatically the featured image
    - Click star icon to set any image as featured
-   - Featured image is used in product listings
+   - Featured image is used in service listings
 
 3. **Image Management**
    - Reorder images with left/right arrows
@@ -40,7 +40,7 @@ The ImageUploader component provides a comprehensive image management system for
 ```tsx
 import ImageUploader from '@/components/admin/ImageUploader';
 
-function ProductForm() {
+function ServiceForm() {
   const [images, setImages] = useState<string[]>([]);
 
   return (
@@ -85,7 +85,7 @@ Or manually copy the rules from `storage.rules` to Firebase Console → Storage 
 ### 3. Important Security Notes
 
 **Current Storage Rules:**
-- ✅ Product images: Admins can upload/delete, everyone can read
+- ✅ Service images: Admins can upload/delete, everyone can read
 - ✅ 5MB file size limit
 - ✅ Image files only (validates MIME type)
 - ❌ **IMPORTANT:** Custom claims (role) need to be set via Firebase Admin SDK
@@ -111,7 +111,7 @@ For development, you can temporarily modify the storage rules to skip role check
 
 ```
 // Temporary rule - DEVELOPMENT ONLY
-match /products/{imageName} {
+match /services/{imageName} {
   allow read: if true;
   allow write: if request.auth != null && isValidImage();
   allow delete: if request.auth != null;
@@ -125,7 +125,7 @@ match /products/{imageName} {
 Images are stored in Firebase Storage with this structure:
 
 ```
-/products/
+/services/
   ├── {timestamp}_{randomId}_image1.jpg
   ├── {timestamp}_{randomId}_image2.jpg
   └── ...
@@ -152,8 +152,8 @@ Images are stored in Firebase Storage with this structure:
 ## Limitations
 
 - **Max file size:** 5MB per image
-- **Max images:** 5 per product (configurable)
-- **Storage path:** `/products/` folder
+- **Max images:** 5 per service (configurable)
+- **Storage path:** `/services/` folder
 
 ## Error Handling
 

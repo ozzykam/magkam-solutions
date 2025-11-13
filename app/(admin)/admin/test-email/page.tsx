@@ -111,37 +111,6 @@ export default function TestEmailPage() {
     }
   };
 
-  const handleTestBackInStock = async () => {
-    if (!testEmail) {
-      showToast('Please enter an email address', 'error');
-      return;
-    }
-
-    setLoading('restock');
-    try {
-      const response = await fetch('/api/test-email/back-in-stock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: testEmail,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        showToast(`Back-in-stock email sent to ${testEmail}!`, 'success');
-      } else {
-        showToast(data.error || 'Failed to send email', 'error');
-      }
-    } catch (error) {
-      console.error('Error testing back-in-stock email:', error);
-      showToast('Failed to send email', 'error');
-    } finally {
-      setLoading(null);
-    }
-  };
-
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
@@ -231,28 +200,6 @@ export default function TestEmailPage() {
             className="w-full"
           >
             Send Test Status Email
-          </Button>
-        </Card>
-
-        {/* Back in Stock */}
-        <Card className="p-6">
-          <div className="flex items-start mb-4">
-            <div className="text-4xl mr-4">🔔</div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Back in Stock</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Sent when wishlisted product restocked
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={handleTestBackInStock}
-            loading={loading === 'restock'}
-            disabled={!testEmail || loading !== null}
-            variant="primary"
-            className="w-full"
-          >
-            Send Test Restock Email
           </Button>
         </Card>
       </div>

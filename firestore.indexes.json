@@ -50,7 +50,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "productId",
+          "fieldPath": "serviceId",
           "order": "ASCENDING"
         },
         {
@@ -76,21 +76,6 @@
       "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "timeSlots",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "isAvailable",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "date",
-          "order": "ASCENDING"
-        }
-      ],
-      "density": "SPARSE_ALL"
-    },
-    {
       "collectionGroup": "vendors",
       "queryScope": "COLLECTION",
       "fields": [
@@ -106,7 +91,7 @@
       "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "products",
+      "collectionGroup": "services",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -125,7 +110,7 @@
       "density": "SPARSE_ALL"
     },
     {
-      "collectionGroup": "products",
+      "collectionGroup": "services",
       "queryScope": "COLLECTION",
       "fields": [
         {

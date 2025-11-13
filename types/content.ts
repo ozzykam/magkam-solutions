@@ -1,7 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 
 /**
- * Flexible Featured Item - can be a product or custom item
+ * Flexible Featured Item - can be a service or custom item
  * For recipes: ingredients (flour, eggs, local honey from your store)
  * For styling: outfit pieces (shoes, accessories)
  * For how-tos: tools/materials needed
@@ -9,12 +9,12 @@ import { Timestamp } from 'firebase/firestore';
 export interface FeaturedItem {
   id: string;
   name: string;
-  productId?: string;        // If linked to a product in your store
-  productSlug?: string;       // For linking to product page
+  serviceId?: string;        // If linked to a service in your store
+  serviceSlug?: string;       // For linking to service page
   quantity?: string;          // e.g., "2 cups", "1 pair", "3 items"
   notes?: string;             // e.g., "or substitute with regular honey"
-  image?: string;             // Custom image if not a product
-  isAvailable?: boolean;      // If it's a product, is it in stock?
+  image?: string;             // Custom image if not a service
+  isAvailable?: boolean;      // If it's a service, is it in stock?
 }
 
 /**
@@ -141,8 +141,8 @@ export const CONTENT_TEMPLATES = {
   blog: {
     sectionName: 'Blog',
     sectionNamePlural: 'Blog Posts',
-    itemsLabel: 'Featured Products',
-    itemsLabelSingular: 'Featured Product',
+    itemsLabel: 'Featured Services',
+    itemsLabelSingular: 'Featured Service',
     urlSlug: 'blog',
   },
 };

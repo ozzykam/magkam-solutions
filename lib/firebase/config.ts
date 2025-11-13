@@ -21,7 +21,7 @@ export const auth = getAuth(app);
 // Note: Auth persistence handled dynamically in the signIn function
 // based on the "Remember Me" checkbox selection
 
-export const db = getFirestore(app, 'local-marketv2'); // Connect to 'local-marketv2' database
+export const db = getFirestore(app); // Connect to default Firestore database
 export const storage = getStorage(app);
 
 export default app;

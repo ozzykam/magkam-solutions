@@ -11,13 +11,12 @@ import {
   orderBy,
   Timestamp,
   increment,
-  writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Review, calculateAverageRating } from '@/types/review';
 
 const REVIEWS_COLLECTION = 'reviews';
-const PRODUCTS_COLLECTION = 'products';
+const SERVICES_COLLECTION = 'services';
 
 /**
  * Create a new review
@@ -34,8 +33,8 @@ export const createReview = async (reviewData: Omit<Review, 'id' | 'createdAt' |
 
     const docRef = await addDoc(collection(db, REVIEWS_COLLECTION), review);
 
-    // Update product's average rating and total reviews
-    await updateProductReviewStats(reviewData.productId);
+    // Update services's average rating and total reviews
+    await updateServiceReviewStats(reviewData.serviceId);
 
     return {
       id: docRef.id,
@@ -48,13 +47,13 @@ export const createReview = async (reviewData: Omit<Review, 'id' | 'createdAt' |
 };
 
 /**
- * Get reviews for a product
+ * Get reviews for a service
  */
-export const getProductReviews = async (productId: string): Promise<Review[]> => {
+export const getServiceReviews = async (serviceId: string): Promise<Review[]> => {
   try {
     const q = query(
       collection(db, REVIEWS_COLLECTION),
-      where('productId', '==', productId),
+      where('serviceId', '==', serviceId),
       orderBy('createdAt', 'desc')
     );
 
@@ -65,7 +64,7 @@ export const getProductReviews = async (productId: string): Promise<Review[]> =>
       ...doc.data(),
     })) as Review[];
   } catch (error) {
-    console.error('Error fetching product reviews:', error);
+    console.error('Error fetching service reviews:', error);
     throw error;
   }
 };
@@ -97,12 +96,12 @@ export const getReviewById = async (reviewId: string): Promise<Review | null> =>
  */
 export const updateReview = async (
   reviewId: string,
-  updates: Partial<Omit<Review, 'id' | 'productId' | 'userId' | 'createdAt'>>
+  updates: Partial<Omit<Review, 'id' | 'serviceId' | 'userId' | 'createdAt'>>
 ): Promise<void> => {
   try {
     const docRef = doc(db, REVIEWS_COLLECTION, reviewId);
 
-    // Get the review to get productId
+    // Get the review to get serviceId
     const reviewDoc = await getDoc(docRef);
     if (!reviewDoc.exists()) {
       throw new Error('Review not found');
@@ -115,9 +114,9 @@ export const updateReview = async (
       updatedAt: Timestamp.now(),
     });
 
-    // If rating changed, update product stats
+    // If rating changed, update service stats
     if (updates.rating !== undefined) {
-      await updateProductReviewStats(review.productId);
+      await updateServiceReviewStats(review.serviceId);
     }
   } catch (error) {
     console.error('Error updating review:', error);
@@ -132,7 +131,7 @@ export const deleteReview = async (reviewId: string): Promise<void> => {
   try {
     const docRef = doc(db, REVIEWS_COLLECTION, reviewId);
 
-    // Get the review to get productId
+    // Get the review to get serviceId
     const reviewDoc = await getDoc(docRef);
     if (!reviewDoc.exists()) {
       throw new Error('Review not found');
@@ -142,8 +141,8 @@ export const deleteReview = async (reviewId: string): Promise<void> => {
 
     await deleteDoc(docRef);
 
-    // Update product stats after deletion
-    await updateProductReviewStats(review.productId);
+    // Update service stats after deletion
+    await updateServiceReviewStats(review.serviceId);
   } catch (error) {
     console.error('Error deleting review:', error);
     throw error;
@@ -190,39 +189,39 @@ export const getUserReviews = async (userId: string): Promise<Review[]> => {
 };
 
 /**
- * Check if user has already reviewed a product
+ * Check if user has already reviewed a service
  */
-export const hasUserReviewedProduct = async (
+export const hasUserReviewedService = async (
   userId: string,
-  productId: string
+  serviceId: string
 ): Promise<boolean> => {
   try {
     const q = query(
       collection(db, REVIEWS_COLLECTION),
       where('userId', '==', userId),
-      where('productId', '==', productId)
+      where('serviceId', '==', serviceId)
     );
 
     const snapshot = await getDocs(q);
     return !snapshot.empty;
   } catch (error) {
-    console.error('Error checking if user reviewed product:', error);
+    console.error('Error checking if user reviewed service:', error);
     throw error;
   }
 };
 
 /**
- * Get user's review for a product
+ * Get user's review for a service
  */
-export const getUserProductReview = async (
+export const getUserServiceReview = async (
   userId: string,
-  productId: string
+  serviceId: string
 ): Promise<Review | null> => {
   try {
     const q = query(
       collection(db, REVIEWS_COLLECTION),
       where('userId', '==', userId),
-      where('productId', '==', productId)
+      where('serviceId', '==', serviceId)
     );
 
     const snapshot = await getDocs(q);
@@ -237,43 +236,58 @@ export const getUserProductReview = async (
       ...doc.data(),
     } as Review;
   } catch (error) {
-    console.error('Error fetching user product review:', error);
+    console.error('Error fetching user service review:', error);
     throw error;
   }
 };
 
 /**
- * Update product's review statistics
+ * Update service's review statistics
  * This is called after creating, updating, or deleting a review
  */
-const updateProductReviewStats = async (productId: string): Promise<void> => {
+const updateServiceReviewStats = async (serviceId: string): Promise<void> => {
   try {
-    // Get all reviews for the product
-    const reviews = await getProductReviews(productId);
+    // Get all reviews for the service
+    const reviews = await getServiceReviews(serviceId);
 
     // Calculate stats
     const totalReviews = reviews.length;
     const averageRating = totalReviews > 0 ? calculateAverageRating(reviews) : 0;
 
-    // Update product document
-    const productRef = doc(db, PRODUCTS_COLLECTION, productId);
-    await updateDoc(productRef, {
+    // Update service document
+    const serviceRef = doc(db, SERVICES_COLLECTION, serviceId);
+    await updateDoc(serviceRef, {
       averageRating,
       totalReviews,
       updatedAt: Timestamp.now(),
     });
   } catch (error) {
-    console.error('Error updating product review stats:', error);
+    console.error('Error updating service review stats:', error);
     throw error;
   }
 };
 
 /**
- * Verify if user purchased the product (for verified purchase badge)
+ * Minimal type for legacy order items
+ * Used for checking if a service was purchased
+ */
+interface OrderItem {
+  id: string;
+  [key: string]: unknown; // Allow other properties from legacy data
+}
+interface LegacyOrder {
+  userId?: string;
+  status?: string;
+  items?: OrderItem[];
+}
+
+/**
+ * Verify if user purchased the service (for verified purchase badge)
+ * Note: This checks legacy order data from when the platform was e-commerce
  */
 export const checkVerifiedPurchase = async (
   userId: string,
-  productId: string
+  serviceId: string
 ): Promise<boolean> => {
   try {
     const q = query(
@@ -284,11 +298,11 @@ export const checkVerifiedPurchase = async (
 
     const snapshot = await getDocs(q);
 
-    // Check if any order contains this product
+    // Check if any order contains this service
     for (const doc of snapshot.docs) {
-      const order = doc.data();
-      const hasProduct = order.items?.some((item: any) => item.id === productId);
-      if (hasProduct) {
+      const order = doc.data() as LegacyOrder;
+      const hasService = order.items?.some((item: OrderItem) => item.id === serviceId);
+      if (hasService) {
         return true;
       }
     }

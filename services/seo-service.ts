@@ -191,7 +191,7 @@ export function applyTemplateVariables(
 
 /**
  * Match a route to wildcard patterns
- * Supports patterns like: /products/*, /account/*
+ * Supports patterns like: /services/*, /account/*
  */
 function matchRoutePattern(
   route: string,
@@ -199,7 +199,7 @@ function matchRoutePattern(
 ): SEOPageConfig | null {
   for (const [pattern, config] of Object.entries(patterns)) {
     // Convert wildcard pattern to regex
-    // /products/* becomes /^\/products\/.+$/
+    // /services/* becomes /^\/services\/.+$/
     const regexPattern = pattern
       .replace(/\*/g, '.+')
       .replace(/\//g, '\\/');

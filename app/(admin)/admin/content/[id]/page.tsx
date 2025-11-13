@@ -15,8 +15,8 @@ import {
   generateSlug,
   isSlugUnique,
 } from '@/services/content-service';
-import { getProducts } from '@/services/product-service';
-import { Product } from '@/types/product';
+import { getServices } from '@/services/service-service';
+import { Service } from '@/types/service';
 import { ContentCategory } from '@/types/content';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -45,12 +45,12 @@ export default function ContentEditorPage({ params }: ContentEditorPageProps) {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [contentSettings, setContentSettings] = useState({
     sectionName: 'Blog Post',
-    itemsLabel: 'Featured Products',
-    itemsLabelSingular: 'Featured Product',
+    itemsLabel: 'Featured Services',
+    itemsLabelSingular: 'Featured Service',
   });
 
   // Form state
@@ -85,9 +85,9 @@ export default function ContentEditorPage({ params }: ContentEditorPageProps) {
         }
       }
 
-      // Load products for featured items selector
-      const allProducts = await getProducts();
-      setProducts(allProducts.filter((p) => p.isActive));
+      // Load services for featured items selector
+      const allServices = await getServices();
+      setServices(allServices.filter((p) => p.isActive));
 
       // Load content categories
       const allCategories = await getContentCategories(true); // Only active categories
@@ -175,15 +175,14 @@ export default function ContentEditorPage({ params }: ContentEditorPageProps) {
     const updated = [...featuredItems];
     updated[index] = { ...updated[index], [field]: value };
 
-    // If product is selected, auto-fill details
-    if (field === 'productId' && value) {
-      const product = products.find((p) => p.id === value);
-      if (product) {
-        updated[index].productId = product.id;
-        updated[index].productSlug = product.slug;
-        updated[index].name = product.name;
-        updated[index].image = product.images[0];
-        updated[index].isAvailable = product.stock > 0;
+    // If service is selected, auto-fill details
+    if (field === 'serviceId' && value) {
+      const service = services.find((p) => p.id === value);
+      if (service) {
+        updated[index].serviceId = service.id;
+        updated[index].serviceSlug = service.slug;
+        updated[index].name = service.name;
+        updated[index].image = service.images[0];
       }
     }
 
@@ -457,19 +456,19 @@ export default function ContentEditorPage({ params }: ContentEditorPageProps) {
                     <div className="flex gap-3">
                       <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Link to Product (optional)
+                          Link to Service (optional)
                         </label>
                         <select
-                          value={item.productId || ''}
+                          value={item.serviceId || ''}
                           onChange={(e) =>
-                            handleUpdateFeaturedItem(index, 'productId', e.target.value)
+                            handleUpdateFeaturedItem(index, 'serviceId', e.target.value)
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         >
                           <option value="">Custom item (not in store)</option>
-                          {products.map((p) => (
+                          {services.map((p) => (
                             <option key={p.id} value={p.id}>
-                              {p.name} {p.stock === 0 ? '(Out of Stock)' : ''}
+                              {p.name}
                             </option>
                           ))}
                         </select>
@@ -489,7 +488,7 @@ export default function ContentEditorPage({ params }: ContentEditorPageProps) {
                         handleUpdateFeaturedItem(index, 'name', e.target.value)
                       }
                       placeholder="Item name"
-                      disabled={!!item.productId}
+                      disabled={!!item.serviceId}
                     />
 
                     <Input
@@ -501,7 +500,7 @@ export default function ContentEditorPage({ params }: ContentEditorPageProps) {
                       placeholder="e.g., 2 cups, 1 pair"
                     />
 
-                    {!item.productId && (
+                    {!item.serviceId && (
                       <SingleImageUploader
                         image={item.image || ''}
                         onChange={(url) => handleUpdateFeaturedItem(index, 'image', url)}

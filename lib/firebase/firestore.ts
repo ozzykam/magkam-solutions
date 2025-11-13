@@ -42,7 +42,7 @@ export const getDocument = async <T>(
  */
 export const getDocuments = async <T>(
   collectionName: string,
-  conditions?: { field: string; operator: WhereFilterOp; value: any }[],
+  conditions?: { field: string; operator: WhereFilterOp; value: unknown }[],
   orderByField?: string,
   orderDirection: 'asc' | 'desc' = 'asc',
   limitCount?: number
@@ -103,7 +103,7 @@ export const createDocument = async <T extends { id?: string }>(
 /**
  * Generic function to update a document
  */
-export const updateDocument = async <T extends Record<string, any>>(
+export const updateDocument = async <T extends Record<string, unknown>>(
   collectionName: string,
   docId: string,
   data: Partial<T>

@@ -1,23 +1,77 @@
 import { Timestamp } from 'firebase/firestore';
 
-export interface TimeSlot {
-  id: string;
-  date: string;              // Format: YYYY-MM-DD
-  startTime: string;         // Format: HH:MM (24-hour)
-  endTime: string;           // Format: HH:MM (24-hour)
-  maxOrders: number;         // Max orders for this slot
-  maxItems: number;          // Max items for this slot
-  currentOrders: number;     // Current orders in this slot
-  currentItems: number;      // Current items in this slot
-  isAvailable: boolean;      // Whether slot is still available
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+export interface ThemeSettings {
+  // Brand Colors
+  primaryColor: string;       // Hex color (e.g., "#3B82F6")
+  secondaryColor: string;     // Hex color (e.g., "#10B981")
+
+  // Typography
+  fontFamily: string;         // Font name (e.g., "Inter", "Poppins", "Roboto")
+
+  // Branding Assets
+  logo?: string;              // Logo image URL from Firebase Storage
+  favicon?: string;           // Favicon image URL from Firebase Storage
 }
 
-export interface TimeSlotCapacity {
-  ordersRemaining: number;
-  itemsRemaining: number;
-  isAvailable: boolean;
+export interface HomepageSettings {
+  // Hero Section
+  hero: {
+    headline: string;           // e.g., "Local Services"
+    highlightedText: string;    // e.g., "Delivered to Your Door" (highlighted in primary color)
+    subtitle: string;           // e.g., "Websites and Digital Solutions for Small Businesses."
+    primaryCTA: {
+      text: string;             // e.g., "Shop Now"
+      link: string;             // e.g., "/services"
+    };
+    secondaryCTA: {
+      text: string;             // e.g., "Learn More"
+      link: string;             // e.g., "/about"
+    };
+  };
+
+  // Features Section
+  features: {
+    feature1: {
+      title: string;            // e.g., "Fresh & Local"
+      description: string;      // e.g., "All services guaranteed."
+      icon: string;             // Icon identifier (check, clock, shield, etc.)
+    };
+    feature2: {
+      title: string;
+      description: string;
+      icon: string;
+    };
+    feature3: {
+      title: string;
+      description: string;
+      icon: string;
+    };
+  };
+
+  // CTA Section
+  cta: {
+    heading: string;            // e.g., "Ready to support local?"
+    subtitle: string;           // e.g., "Join thousands of customers..."
+    buttonText: string;         // e.g., "Create Your Account"
+    buttonLink: string;         // e.g., "/register"
+  };
+}
+
+export interface NavigationItem {
+  id: string;
+  label: string;
+  url: string;
+  openInNewTab?: boolean;
+  children?: NavigationItem[];  // For dropdown menus
+  showOnDesktop?: boolean;
+  showOnMobile?: boolean;
+}
+
+export interface NavigationSettings {
+  mainNav: NavigationItem[];
+  showLogo?: boolean;
+  showSearch?: boolean;
+  showUserMenu?: boolean;
 }
 
 export interface StoreSettings {
@@ -34,14 +88,15 @@ export interface StoreSettings {
     state: string;
     zipCode: string;
   };
-
-  // Delivery Settings
-  deliveryRadius?: number;          // Delivery radius in miles (e.g., 10)
-  storeLocation?: {
-    latitude: number;
-    longitude: number;
-  };
-  deliveryEnabled?: boolean;        // Whether delivery service is enabled
+  operatingHours?: {
+    monday: string;
+    tuesday: string;
+    wednesday: string;
+    thursday: string;
+    friday: string;
+    saturday: string;
+    sunday: string;
+  }
 
   // Social Media
   socialMedia?: {
@@ -54,6 +109,23 @@ export interface StoreSettings {
 
   // Notification Settings
   adminNotificationEmail?: string;  // Email address to receive new order notifications
+
+  // Theme Settings
+  themeSettings?: ThemeSettings;
+
+  // Homepage Settings
+  homepageSettings?: HomepageSettings;
+
+  // Navigation Settings
+  navigationSettings?: NavigationSettings;
+
+  // Service Settings
+  serviceSettings?: {
+    enabled: boolean;
+    serviceName: string;          // e.g., "Service", "Product", "Solution", "Offering"
+    serviceNamePlural: string;    // e.g., "Services", "Products", "Solutions", "Offerings"
+    urlSlug: string;              // e.g., "services", "products", "solutions", "offerings"
+  };
 
   // Content Settings (Blog/Recipes/Style Guides)
   contentSettings?: {
@@ -70,6 +142,7 @@ export interface StoreSettings {
 
   // Premium Features (Tier-based)
   features?: {
+    // Analytics
     analytics?: {
       enabled: boolean;
       // Google Analytics 4
@@ -91,106 +164,156 @@ export interface StoreSettings {
       cookieConsent?: boolean;        // Show cookie consent banner
       dataRetentionDays?: number;     // How long to retain analytics data
     };
-    // Future premium features can be added here:
-    // advancedSeo?: { enabled: boolean; };
-    // emailMarketing?: { enabled: boolean; };
-    // inventorySync?: { enabled: boolean; };
-  };
 
-  // Time Slot Settings
-  maxOrdersPerHour: number;    // Default: 10
-  maxItemsPerHour: number;      // Default: 100
-  slotDurationMinutes: number;  // Default: 60 (1 hour slots)
-  advanceBookingDays: number;   // How many days in advance can customers book
-  operatingHours: {
-    [key: string]: {           // Key: day of week (0-6, 0 = Sunday)
-      open: string;            // Format: HH:MM
-      close: string;           // Format: HH:MM
-      closed: boolean;         // True if store is closed this day
+    // Calculators
+    calculators?: {
+      enabled: boolean;
+      showInNavigation?: boolean;     // Show calculators link in main navigation
+    };
+
+    // Reviews & Ratings
+    reviews?: {
+      enabled: boolean;
+      allowAnonymous?: boolean;       // Allow reviews without login
+      requireModeration?: boolean;    // Admin must approve reviews before showing
+      allowPhotos?: boolean;          // Allow photo uploads in reviews
+    };
+
+    // Content Bookmarks
+    bookmarks?: {
+      enabled: boolean;
+      showInNavigation?: boolean;     // Show bookmarks link in navigation
+    };
+
+    // Contact Forms
+    contact?: {
+      enabled: boolean;
+      requireAuth?: boolean;          // Require login to submit contact form
+      notificationEmail?: string;     // Override admin notification email
+    };
+
+    // User Registration
+    userRegistration?: {
+      enabled: boolean;
+      requireEmailVerification?: boolean;  // Require email verification
+      allowSocialLogin?: boolean;     // Enable Google/Facebook login
+    };
+
+    // Search
+    search?: {
+      enabled: boolean;
+      searchServices?: boolean;       // Include services in search
+      searchContent?: boolean;        // Include content in search
     };
   };
-  blackoutDates: string[];     // Dates when store is closed (YYYY-MM-DD)
+
   updatedAt: Timestamp;
 }
 
 // Default store settings
 export const DEFAULT_STORE_SETTINGS: Omit<StoreSettings, 'id' | 'updatedAt'> = {
+  themeSettings: {
+    primaryColor: '#3B82F6',      // Blue-500
+    secondaryColor: '#10B981',    // Green-500
+    fontFamily: 'Inter',
+  },
+  homepageSettings: {
+    hero: {
+      headline: 'Professional Services',
+      highlightedText: 'Tailored to Your Needs',
+      subtitle: 'Expert solutions to help your business grow and succeed.',
+      primaryCTA: {
+        text: 'View Our Services',
+        link: '/services',
+      },
+      secondaryCTA: {
+        text: 'Learn More',
+        link: '/about',
+      },
+    },
+    features: {
+      feature1: {
+        title: 'Quality Service',
+        description: 'Professional service with attention to detail and excellence.',
+        icon: 'check',
+      },
+      feature2: {
+        title: 'Fast Turnaround',
+        description: 'Efficient delivery without compromising on quality.',
+        icon: 'clock',
+      },
+      feature3: {
+        title: 'Satisfaction Guaranteed',
+        description: '100% satisfaction guarantee or your money back.',
+        icon: 'shield',
+      },
+    },
+    cta: {
+      heading: 'Ready to Get Started?',
+      subtitle: 'Join our growing community of satisfied clients',
+      buttonText: 'Create Your Account',
+      buttonLink: '/register',
+    },
+  },
+  serviceSettings: {
+    enabled: true,
+    serviceName: 'Service',
+    serviceNamePlural: 'Services',
+    urlSlug: 'services',
+  },
   contentSettings: {
     enabled: true,
     sectionName: 'Blog',
     sectionNamePlural: 'Blog Posts',
-    itemsLabel: 'Featured Products',
-    itemsLabelSingular: 'Featured Product',
+    itemsLabel: 'Featured Services',
+    itemsLabelSingular: 'Featured Service',
     urlSlug: 'blog',
     showAuthor: true,
     showViewCount: false,
     allowVendorPosts: false,
   },
-  maxOrdersPerHour: 10,
-  maxItemsPerHour: 100,
-  slotDurationMinutes: 60,
-  advanceBookingDays: 7,
-  operatingHours: {
-    '0': { open: '09:00', close: '18:00', closed: false }, // Sunday
-    '1': { open: '08:00', close: '20:00', closed: false }, // Monday
-    '2': { open: '08:00', close: '20:00', closed: false }, // Tuesday
-    '3': { open: '08:00', close: '20:00', closed: false }, // Wednesday
-    '4': { open: '08:00', close: '20:00', closed: false }, // Thursday
-    '5': { open: '08:00', close: '20:00', closed: false }, // Friday
-    '6': { open: '08:00', close: '20:00', closed: false }, // Saturday
+  features: {
+    analytics: {
+      enabled: false,
+      google: {
+        enabled: false,
+        trackEcommerce: false,
+        anonymizeIp: true,
+      },
+      bing: {
+        enabled: false,
+        trackHeatmaps: false,
+      },
+      cookieConsent: true,
+      dataRetentionDays: 90,
+    },
+    calculators: {
+      enabled: true,
+      showInNavigation: true,
+    },
+    reviews: {
+      enabled: true,
+      allowAnonymous: false,
+      requireModeration: false,
+      allowPhotos: true,
+    },
+    bookmarks: {
+      enabled: true,
+      showInNavigation: true,
+    },
+    contact: {
+      enabled: true,
+      requireAuth: false,
+    },
+    userRegistration: {
+      enabled: true,
+      requireEmailVerification: false,
+      allowSocialLogin: false,
+    },
+    search: {
+      enabled: true,
+      searchServices: true,
+      searchContent: true,
+    },
   },
-  blackoutDates: [],
-};
-
-// Helper to format time slot for display
-export const formatTimeSlot = (startTime: string, endTime: string): string => {
-  const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-  };
-
-  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
-};
-
-// Helper to format date for display
-export const formatSlotDate = (dateString: string): string => {
-  // Parse date string in local timezone (YYYY-MM-DD)
-  const [year, month, day] = dateString.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Reset to midnight for comparison
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const dateOnly = new Date(date);
-  dateOnly.setHours(0, 0, 0, 0);
-
-  const isToday = dateOnly.getTime() === today.getTime();
-  const isTomorrow = dateOnly.getTime() === tomorrow.getTime();
-
-  if (isToday) return 'Today - ' + date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-  if (isTomorrow) return 'Tomorrow - ' + date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-};
-
-// Helper to check if a time slot is full
-export const isTimeSlotFull = (slot: TimeSlot): boolean => {
-  return slot.currentOrders >= slot.maxOrders || slot.currentItems >= slot.maxItems;
-};
-
-// Helper to get capacity percentage
-export const getCapacityPercentage = (slot: TimeSlot): number => {
-  const orderPercentage = (slot.currentOrders / slot.maxOrders) * 100;
-  const itemPercentage = (slot.currentItems / slot.maxItems) * 100;
-  return Math.max(orderPercentage, itemPercentage);
-};
-
-// Helper to generate time slot ID
-export const generateTimeSlotId = (date: string, startTime: string): string => {
-  return `${date}_${startTime.replace(':', '')}`;
 };

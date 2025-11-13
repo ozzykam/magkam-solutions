@@ -20,7 +20,7 @@ export default function ShopControls({
       <div className="flex-1 max-w-xl">
         <Input
           type="search"
-          placeholder="Search products by name or tag (e.g., 'tomato', 'grass fed', 'organic')..."
+          placeholder="Search services by name or tag (e.g., 'tomato', 'grass fed', 'organic')..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           leftIcon={

@@ -76,14 +76,16 @@ export default function ContactPageContent() {
   };
 
   const formatOperatingHours = (operatingHours: StoreSettings['operatingHours']) => {
+    if (!operatingHours) return null;
+
     const days = [
-      { key: '0', label: 'Sunday' },
-      { key: '1', label: 'Monday' },
-      { key: '2', label: 'Tuesday' },
-      { key: '3', label: 'Wednesday' },
-      { key: '4', label: 'Thursday' },
-      { key: '5', label: 'Friday' },
-      { key: '6', label: 'Saturday' },
+      { key: 'sunday' as const, label: 'Sunday' },
+      { key: 'monday' as const, label: 'Monday' },
+      { key: 'tuesday' as const, label: 'Tuesday' },
+      { key: 'wednesday' as const, label: 'Wednesday' },
+      { key: 'thursday' as const, label: 'Thursday' },
+      { key: 'friday' as const, label: 'Friday' },
+      { key: 'saturday' as const, label: 'Saturday' },
     ];
 
     const formatTime = (time: string) => {
@@ -95,7 +97,7 @@ export default function ContactPageContent() {
 
     return days.map(({ key, label }) => {
       const hours = operatingHours[key];
-      if (hours.closed) {
+      if (typeof hours === 'object' && hours && 'closed' in hours && (hours as { closed: boolean }).closed) {
         return (
           <div key={key} className="flex justify-between py-2 border-b border-gray-100">
             <span className="font-medium text-gray-700">{label}</span>
@@ -104,14 +106,18 @@ export default function ContactPageContent() {
         );
       }
 
-      return (
-        <div key={key} className="flex justify-between py-2 border-b border-gray-100">
-          <span className="font-medium text-gray-700">{label}</span>
-          <span className="text-gray-600">
-            {formatTime(hours.open)} - {formatTime(hours.close)}
-          </span>
-        </div>
-      );
+      if (typeof hours === 'object' && hours && 'open' in hours && 'close' in hours) {
+        return (
+          <div key={key} className="flex justify-between py-2 border-b border-gray-100">
+            <span className="font-medium text-gray-700">{label}</span>
+            <span className="text-gray-600">
+              {formatTime((hours as { open: string; close: string }).open)} - {formatTime((hours as { open: string; close: string }).close)}
+            </span>
+          </div>
+        );
+      }
+
+      return null;
     });
   };
 

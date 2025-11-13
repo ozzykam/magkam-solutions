@@ -12,7 +12,7 @@ export enum UserRole {
 export interface EmployeePermissions {
   canViewOrders: boolean;
   canUpdateOrders: boolean;
-  canManageProducts: boolean;
+  canManageServices: boolean;
   canManageInventory: boolean;
   canProcessRefunds: boolean;
   canViewAnalytics: boolean;
@@ -66,7 +66,7 @@ export const isSuperAdmin = (email: string | null): boolean => {
 export const DEFAULT_EMPLOYEE_PERMISSIONS: EmployeePermissions = {
   canViewOrders: true,
   canUpdateOrders: true,
-  canManageProducts: false,
+  canManageServices: false,
   canManageInventory: false,
   canProcessRefunds: false,
   canViewAnalytics: false,
@@ -76,7 +76,7 @@ export const DEFAULT_EMPLOYEE_PERMISSIONS: EmployeePermissions = {
 export const DEFAULT_MANAGER_PERMISSIONS: EmployeePermissions = {
   canViewOrders: true,
   canUpdateOrders: true,
-  canManageProducts: true,
+  canManageServices: true,
   canManageInventory: true,
   canProcessRefunds: true,
   canViewAnalytics: true,
@@ -86,7 +86,7 @@ export const DEFAULT_MANAGER_PERMISSIONS: EmployeePermissions = {
 export const ADMIN_PERMISSIONS: EmployeePermissions = {
   canViewOrders: true,
   canUpdateOrders: true,
-  canManageProducts: true,
+  canManageServices: true,
   canManageInventory: true,
   canProcessRefunds: true,
   canViewAnalytics: true,

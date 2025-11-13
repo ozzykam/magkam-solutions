@@ -1,11 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { Order, OrderStatus } from '@/types/order';
 import Card from '@/components/ui/Card';
-import Badge from '@/components/ui/Badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 import {
@@ -27,7 +23,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats] = useState<DashboardStats>({
     totalOrders: 0,
     pendingOrders: 0,
     completedOrders: 0,
@@ -35,7 +31,6 @@ export default function AdminDashboard() {
     todayOrders: 0,
     todayRevenue: 0,
   });
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,41 +40,6 @@ export default function AdminDashboard() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-
-      // Get all orders
-      const ordersQuery = query(collection(db, 'orders'));
-      const ordersSnapshot = await getDocs(ordersQuery);
-      const orders = ordersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
-
-      // Calculate stats
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
-      const pendingOrders = orders.filter(o => o.status === OrderStatus.PENDING).length;
-      const completedOrders = orders.filter(o => o.status === OrderStatus.COMPLETED).length;
-
-      const todayOrders = orders.filter(o => o.createdAt.toDate() >= todayStart);
-      const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
-
-      setStats({
-        totalOrders: orders.length,
-        pendingOrders,
-        completedOrders,
-        totalRevenue,
-        todayOrders: todayOrders.length,
-        todayRevenue,
-      });
-
-      // Get recent orders (last 10)
-      const recentQuery = query(
-        collection(db, 'orders'),
-        orderBy('createdAt', 'desc'),
-        limit(10)
-      );
-      const recentSnapshot = await getDocs(recentQuery);
-      const recent = recentSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Order));
-      setRecentOrders(recent);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -148,49 +108,6 @@ export default function AdminDashboard() {
           color="green"
         />
       </div>
-
-      {/* Recent Orders */}
-      <Card>
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Orders</h2>
-          {recentOrders.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No orders yet</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Order #</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Customer</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Total</th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentOrders.map(order => (
-                    <tr key={order.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">#{order.orderNumber}</td>
-                      <td className="py-3 px-4 text-sm text-gray-700">{order.userName}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">
-                        {order.createdAt.toDate().toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">
-                        ${order.total.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge variant={getStatusVariant(order.status)} size="sm">
-                          {order.status}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </Card>
     </div>
   );
 }
@@ -236,23 +153,3 @@ function StatCard({ title, value, subtitle, icon, color }: StatCardProps) {
   );
 }
 
-function getStatusVariant(status: OrderStatus): 'default' | 'primary' | 'success' | 'warning' | 'error' {
-  switch (status) {
-    case OrderStatus.PENDING:
-      return 'default';
-    case OrderStatus.PAID:
-    case OrderStatus.PROCESSING:
-    case OrderStatus.OUT_FOR_DELIVERY:
-      return 'primary';
-    case OrderStatus.READY_FOR_PICKUP:
-    case OrderStatus.DELIVERED:
-      return 'warning';
-    case OrderStatus.COMPLETED:
-      return 'success';
-    case OrderStatus.CANCELLED:
-    case OrderStatus.REFUNDED:
-      return 'error';
-    default:
-      return 'default';
-  }
-}

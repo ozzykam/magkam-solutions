@@ -111,7 +111,7 @@ export async function getUser(uid: string) {
 /**
  * Set custom user claims (e.g., role)
  */
-export async function setCustomClaims(uid: string, claims: Record<string, any>) {
+export async function setCustomClaims(uid: string, claims: Record<string, unknown>) {
   try {
     const auth = getAdminAuth();
     await auth.setCustomUserClaims(uid, claims);
