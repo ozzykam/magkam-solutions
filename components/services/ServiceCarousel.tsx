@@ -1,20 +1,13 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { Service } from '@/types/service';
 import ServiceCard from './ServiceCard';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-
-type ServiceWithDates = Omit<Service, 'createdAt' | 'updatedAt' | 'saleStart' | 'saleEnd'> & {
-  createdAt: Date;
-  updatedAt: Date;
-  saleStart?: Date;
-  saleEnd?: Date;
-};
+import { ServiceWithOptionalDates } from '@/lib/utils/service-helpers';
 
 interface ServiceCarouselProps {
-  title: string;
-  services: (Service | ServiceWithDates)[];
+  title?: string;
+  services: ServiceWithOptionalDates[];
   viewAllHref?: string;
 }
 

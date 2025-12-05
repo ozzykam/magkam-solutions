@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Service } from '@/types/service';
+import { Service } from '@/types/services';
 import ServiceForm from '@/components/admin/ServiceForm';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 

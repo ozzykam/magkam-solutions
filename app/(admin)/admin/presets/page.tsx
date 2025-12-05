@@ -6,10 +6,8 @@ import { db } from '@/lib/firebase/config';
 import { BUSINESS_PRESETS, BusinessPreset } from '@/lib/presets/business-presets';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { useRouter } from 'next/navigation';
 
 export default function PresetsPage() {
-  const router = useRouter();
   const [applying, setApplying] = useState<string | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<BusinessPreset | null>(null);
 

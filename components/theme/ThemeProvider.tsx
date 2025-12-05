@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { StoreSettings } from '@/types/business-info';
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeLoaded, setThemeLoaded] = useState(false);
-
   useEffect(() => {
     const loadAndApplyTheme = async () => {
       try {
@@ -57,11 +55,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
             updateFavicon(theme.favicon);
           }
         }
-
-        setThemeLoaded(true);
       } catch (error) {
         console.error('Error loading theme:', error);
-        setThemeLoaded(true);
       }
     };
 

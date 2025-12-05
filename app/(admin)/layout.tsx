@@ -10,18 +10,14 @@ import { UserRole } from '@/types';
 import { StoreSettings } from '@/types/business-info';
 import { getUnreadMessageCount } from '@/services/contact-message-service';
 import {
-  ShoppingCartIcon,
   UsersIcon,
   Cog6ToothIcon,
   CubeIcon,
   ChartBarIcon,
-  ClockIcon,
   BuildingStorefrontIcon,
-  ClipboardDocumentCheckIcon,
   Bars3Icon,
   XMarkIcon,
   EnvelopeIcon,
-  HashtagIcon,
   PencilSquareIcon,
   PresentationChartLineIcon,
   RocketLaunchIcon,

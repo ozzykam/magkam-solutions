@@ -9,14 +9,13 @@ import {
   SparklesIcon,
   TruckIcon,
   ShieldCheckIcon,
-  GlobeAmericasIcon
 } from '@heroicons/react/24/outline';
 import { getStoreSettings } from '@/services/business-info-service';
 import { getSEOForRoute, applyTemplateVariables } from '@/services/seo-service';
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getStoreSettings();
-  const businessName = settings.businessName || 'Local Market';
+  const businessName = settings.businessName || 'MagKam Solutions';
 
   // Get SEO settings from admin configuration
   const seoConfig = await getSEOForRoute('/about');
@@ -28,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const description = seoConfig.description
     ? applyTemplateVariables(seoConfig.description, { businessName })
-    : `Learn about ${businessName} - connecting communities through fresh, local food. Supporting local farmers and artisans.`;
+    : `Learn about ${businessName} – a studio focused on building modern, maintainable websites and web applications for small businesses, creatives, and community-focused organizations.`;
 
   return {
     title,
@@ -49,39 +48,40 @@ export default function AboutPage() {
     {
       icon: HeartIcon,
       title: 'Community First',
-      description: 'We believe in supporting local farmers and artisans, creating a thriving community marketplace.',
+      description:
+        'We prioritize small businesses, cooperatives, and local organizations, designing tools that help them grow without sacrificing who they are.',
     },
     {
       icon: SparklesIcon,
-      title: 'Quality Services',
-      description: 'Every service is carefully selected to ensure you receive the freshest, highest-quality goods.',
+      title: 'Modern Solutions',
+      description:
+        'From responsive websites to full-featured web apps, we build with modern stacks that are fast, accessible, and easy to maintain.',
     },
     {
       icon: TruckIcon,
-      title: 'Fresh & Fast',
-      description: 'From farm to table in record time. Most deliveries arrive within 24 hours of harvest.',
+      title: 'Smooth Delivery',
+      description:
+        'We keep projects moving with clear timelines, structured milestones, and a launch plan that feels organized—not chaotic.',
     },
     {
       icon: ShieldCheckIcon,
       title: 'Trust & Transparency',
-      description: 'Know exactly where your food comes from and meet the people who grow it.',
-    },
-    {
-      icon: GlobeAmericasIcon,
-      title: 'Sustainability',
-      description: 'Supporting local reduces carbon footprint and promotes sustainable farming practices.',
+      description:
+        'No buzzword soup, no surprise costs. Just honest communication, straightforward pricing, and clear expectations at every step.',
     },
     {
       icon: UserGroupIcon,
-      title: 'Community Impact',
-      description: 'Every purchase directly supports local families and strengthens our community.',
+      title: 'Collaborative Process',
+      description:
+        'We treat every build as a partnership, working closely with you to refine features, content, and strategy so the final product actually fits your work.',
     },
   ];
 
   const stats = [
-    { label: 'Average Monthly Visitors', value: '100,000+' },
-    { label: 'Satisfied Clients', value: '150+' },
-    { label: 'Successful Launches', value: '200+' },
+    { label: 'Projects Delivered', value: '20+' },
+    { label: 'Industries Served', value: '5+' },
+    { label: 'Avg. Response Time', value: '< 24 hrs' },
+    { label: 'Customer Satisfaction', value: '100%' },
   ];
 
   return (
@@ -94,11 +94,12 @@ export default function AboutPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div className="text-center">
               <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                Websites & Digital Services That Empower Your Business 
+                Thoughtful Websites & Web Apps for Real-World Businesses
               </h1>
               <p className="text-xl md:text-2xl text-primary-100 max-w-3xl mx-auto">
-                We&apos;re more than just a digital agency – we&apos;re a bridge between business owners
-                and communities who believe in quality, sustainability, and local impact.
+                MagKam Solutions designs and builds modern digital experiences that help
+                small teams look professional, work more efficiently, and connect more
+                deeply with the people they serve.
               </p>
             </div>
           </div>
@@ -111,19 +112,22 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
               <div className="text-lg text-gray-600 space-y-4">
                 <p>
-                  Local Market was born from a simple idea: what if getting fresh,
-                  locally-grown food was as easy as ordering online? We saw talented farmers
-                  and artisans struggling to reach customers, while those customers were searching
-                  for fresh, quality services.
+                  MagKam Solutions grew out of a simple pattern: talented people doing
+                  important work—running cafes, co-ops, small law practices, local
+                  services—stuck with clunky websites and tools that did not reflect the
+                  quality of what they actually do.
                 </p>
                 <p>
-                  Today, we&apos;ve created a thriving marketplace that brings together the best local
-                  vendors and conscious consumers. Every purchase you make supports local families,
-                  reduces environmental impact, and strengthens our community.
+                  We started building custom digital solutions to close that gap. Instead
+                  of forcing businesses into rigid templates, we focus on understanding
+                  how you operate, who you serve, and what “a good day” looks like for
+                  you and your team.
                 </p>
                 <p>
-                  We&apos;re proud to be part of a movement toward sustainable, local food systems –
-                  and we&apos;re just getting started.
+                  Today, we partner with small businesses, nonprofits, and community-based
+                  organizations to create websites and web applications that feel
+                  intentional, reliable, and built to grow with you—not just launched and
+                  forgotten.
                 </p>
               </div>
             </div>
@@ -134,7 +138,7 @@ export default function AboutPage() {
         <div className="bg-gray-50 py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {stats.map((stat, index) => (
+              {stats.map((stat: { label: string; value: string }, index: number) => (
                 <div key={index} className="text-center">
                   <div className="text-4xl font-bold text-primary-600 mb-2">
                     {stat.value}
@@ -154,7 +158,8 @@ export default function AboutPage() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Values</h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                These principles guide everything we do and every decision we make.
+                These principles guide how we build, how we communicate, and how we show up
+                for the people we work with.
               </p>
             </div>
 
@@ -189,9 +194,9 @@ export default function AboutPage() {
         <div className="bg-gradient-to-b from-gray-50 to-white py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">How It Works</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">How We Work Together</h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Getting fresh, local services delivered to your door is simple
+                A clear, collaborative process from first conversation to launch—and beyond.
               </p>
             </div>
 
@@ -201,10 +206,12 @@ export default function AboutPage() {
                   1
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2 text-lg">
-                  Browse & Shop
+                  Discover & Define
                 </h3>
                 <p className="text-gray-600">
-                  Explore services from local vendors. Filter by tags, vendors, or search for exactly what you need.
+                  We start with a conversation about your business, your goals, and what
+                  is not working today. From there, we define scope, priorities, and a
+                  realistic roadmap.
                 </p>
               </div>
 
@@ -213,10 +220,12 @@ export default function AboutPage() {
                   2
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2 text-lg">
-                  Place Your Order
+                  Design & Build
                 </h3>
                 <p className="text-gray-600">
-                  Add items to your cart and checkout. Choose delivery or pickup, and select your preferred time slot.
+                  We design the experience and build the underlying system—whether that is
+                  a marketing site, a booking platform, or a custom web app—sharing
+                  progress and gathering feedback along the way.
                 </p>
               </div>
 
@@ -225,10 +234,11 @@ export default function AboutPage() {
                   3
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2 text-lg">
-                  Enjoy Fresh Services
+                  Launch, Support, Grow
                 </h3>
                 <p className="text-gray-600">
-                  Receive your order and enjoy the freshest services from your community. Support local, eat well.
+                  We handle launch support, basic training, and ongoing improvements so
+                  your digital presence can evolve as your business does.
                 </p>
               </div>
             </div>
@@ -239,23 +249,24 @@ export default function AboutPage() {
         <div className="bg-primary-600 text-white py-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-3xl font-bold mb-4">
-              Ready to Support Local?
+              Ready to Level Up Your Digital Presence?
             </h2>
             <p className="text-xl text-primary-100 mb-8">
-              Join thousands of customers who choose fresh, local, and sustainable.
+              Whether you need a clean, modern website or a custom web application, we’d
+              love to learn about your work and explore what we can build together.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/shop"
+                href="/contact"
                 className="bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
               >
-                Start Shopping
+                Start a Project
               </Link>
               <Link
-                href="/contact"
+                href="/services"
                 className="bg-primary-700 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-800 transition-colors border-2 border-white"
               >
-                Get In Touch
+                View Services
               </Link>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Review } from '@/types/review';
-import { Service } from '@/types/service';
+import { Service } from '@/types/services';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
@@ -10,7 +10,7 @@ import ReviewForm from '@/components/reviews/ReviewForm';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { useToast } from '@/components/ui/ToastContainer';
 import { createReview, checkVerifiedPurchase, markReviewHelpful, getServiceReviews } from '@/services/review-service';
-import { getServiceBySlug } from '@/services/service-service';
+import { getServiceBySlug } from '@/services/services-service';
 
 interface ServiceReviewsProps {
   serviceId: string;

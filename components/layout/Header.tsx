@@ -18,6 +18,8 @@ const Header: React.FC = () => {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [solutionsMenuOpen, setSolutionsMenuOpen] = useState(false);
+  const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
   const [contentSettings, setContentSettings] = useState<{
@@ -129,14 +131,17 @@ const Header: React.FC = () => {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             {logo ? (
-              <Image
-                src={logo}
-                alt={businessName || 'Logo'}
-                width={150}
-                height={48}
-                className="h-10 w-auto object-contain"
-                priority
-              />
+              <>
+                <Image
+                  src={logo}
+                  alt={businessName || 'Logo'}
+                  width={150}
+                  height={48}
+                  className="h-10 w-auto object-contain"
+                  priority
+                />
+                <span className="text-xl font-bold text-gray-900">{businessName}</span>
+              </>
             ) : (
               <>
                 <div className="w-8 h-8 bg-primary-600 rounded-md flex items-center justify-center">
@@ -164,6 +169,71 @@ const Header: React.FC = () => {
                 {contentSettings.sectionNamePlural}
               </Link>
             )}
+
+            {/* Solutions Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setSolutionsMenuOpen(!solutionsMenuOpen)}
+                onMouseEnter={() => setSolutionsMenuOpen(true)}
+                onMouseLeave={() => setSolutionsMenuOpen(false)}
+                className="flex items-center gap-1 text-gray-700 hover:text-primary-600 transition-colors"
+              >
+                Solutions
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {solutionsMenuOpen && (
+                <div
+                  className="absolute left-0 mt-2 w-56 bg-white rounded-md shadow-lg py-2 animate-fade-in"
+                  onMouseEnter={() => setSolutionsMenuOpen(true)}
+                  onMouseLeave={() => setSolutionsMenuOpen(false)}
+                >
+                  <Link
+                    href="/solutions/websites"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setSolutionsMenuOpen(false)}
+                  >
+                    <div className="font-semibold">Websites</div>
+                    <div className="text-xs text-gray-500">Modern web development</div>
+                  </Link>
+                  <Link
+                    href="/solutions/ecommerce"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setSolutionsMenuOpen(false)}
+                  >
+                    <div className="font-semibold">Ecommerce</div>
+                    <div className="text-xs text-gray-500">Custom online platforms</div>
+                  </Link>
+                  <Link
+                    href="/solutions/custom-software"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setSolutionsMenuOpen(false)}
+                  >
+                    <div className="font-semibold">Custom Software</div>
+                    <div className="text-xs text-gray-500">CRMs, SaaS, and more</div>
+                  </Link>
+                  <Link
+                    href="/solutions/consulting"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setSolutionsMenuOpen(false)}
+                  >
+                    <div className="font-semibold">Consulting</div>
+                    <div className="text-xs text-gray-500">Technical strategy</div>
+                  </Link>
+                  <hr className="my-2" />
+                  <Link
+                    href="/solutions"
+                    className="block px-4 py-2 text-sm text-primary-600 hover:bg-gray-100 font-semibold"
+                    onClick={() => setSolutionsMenuOpen(false)}
+                  >
+                    View All Solutions →
+                  </Link>
+                </div>
+              )}
+            </div>
+
             {features.calculators?.enabled && features.calculators?.showInNavigation && (
               <Link href="/calculators" className="text-gray-700 hover:text-primary-600 transition-colors">
                 Calculators
@@ -341,6 +411,74 @@ const Header: React.FC = () => {
                   {contentSettings.sectionNamePlural}
                 </Link>
               )}
+
+              {/* Mobile Solutions Dropdown */}
+              <div>
+                <button
+                  onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
+                  className="flex items-center gap-1 text-gray-700 hover:text-primary-600 transition-colors w-full text-left"
+                >
+                  Solutions
+                  <svg className={`w-4 h-4 transition-transform ${mobileSolutionsOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {mobileSolutionsOpen && (
+                  <div className="ml-4 mt-2 flex flex-col gap-2">
+                    <Link
+                      href="/solutions/websites"
+                      className="text-sm text-gray-700 hover:text-primary-600 transition-colors"
+                      onClick={() => {
+                        setMobileSolutionsOpen(false);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      Websites
+                    </Link>
+                    <Link
+                      href="/solutions/ecommerce"
+                      className="text-sm text-gray-700 hover:text-primary-600 transition-colors"
+                      onClick={() => {
+                        setMobileSolutionsOpen(false);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      Ecommerce
+                    </Link>
+                    <Link
+                      href="/solutions/custom-software"
+                      className="text-sm text-gray-700 hover:text-primary-600 transition-colors"
+                      onClick={() => {
+                        setMobileSolutionsOpen(false);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      Custom Software
+                    </Link>
+                    <Link
+                      href="/solutions/consulting"
+                      className="text-sm text-gray-700 hover:text-primary-600 transition-colors"
+                      onClick={() => {
+                        setMobileSolutionsOpen(false);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      Consulting
+                    </Link>
+                    <Link
+                      href="/solutions"
+                      className="text-sm text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+                      onClick={() => {
+                        setMobileSolutionsOpen(false);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      View All →
+                    </Link>
+                  </div>
+                )}
+              </div>
+
               {features.calculators?.enabled && features.calculators?.showInNavigation && (
                 <Link
                   href="/calculators"

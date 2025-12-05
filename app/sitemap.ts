@@ -3,7 +3,7 @@ import { MetadataRoute } from 'next';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { StoreSettings } from '@/types/business-info';
-import { getServices } from '@/services/service-service';
+import { getServices } from '@/services/services-service';
 import { getContentPosts } from '@/services/content-service';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Service } from '@/types/service';
+import { Service } from '@/types/services';
 import ShopControls from './ShopControls';
 
 

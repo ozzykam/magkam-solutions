@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import {
   Calculator,
+  SerializedCalculator,
   CalculatorFeature,
   CalculatorConfigField,
 } from '@/types/calculator';
@@ -11,7 +12,7 @@ import { Button, Card, Input } from '@/components/ui';
 import CalculatorResults from './CalculatorResults';
 
 interface ServiceCalculatorProps {
-  calculator: Calculator;
+  calculator: Calculator | SerializedCalculator;
 }
 
 /**

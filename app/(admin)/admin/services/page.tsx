@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { collection, query, orderBy, getDocs, deleteDoc, doc, addDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { isCurrentlyOnSale, Service } from '@/types/service';
+import { isCurrentlyOnSale, Service } from '@/types/services';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';

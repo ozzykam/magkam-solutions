@@ -1,16 +1,9 @@
 import React from 'react';
 import ServiceCard from './ServiceCard';
-import { Service } from '@/types/service';
-
-type ServiceWithDates = Omit<Service, 'createdAt' | 'updatedAt' | 'saleStart' | 'saleEnd'> & {
-  createdAt: Date;
-  updatedAt: Date;
-  saleStart?: Date;
-  saleEnd?: Date;
-};
+import { ServiceWithOptionalDates } from '@/lib/utils/service-helpers';
 
 interface ServiceGridProps {
-  services: (Service | ServiceWithDates)[];
+  services: ServiceWithOptionalDates[];
   columns?: 2 | 3 | 4;
   loading?: boolean;
   emptyMessage?: string;

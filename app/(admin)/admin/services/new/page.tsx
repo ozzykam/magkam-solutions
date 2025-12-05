@@ -3,7 +3,7 @@
 import React from 'react';
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Service } from '@/types/service';
+import { Service } from '@/types/services';
 import ServiceForm from '@/components/admin/ServiceForm';
 
 export default function NewServicePage() {

@@ -72,6 +72,15 @@ export interface Calculator {
 }
 
 /**
+ * Serialized Calculator for client components
+ * Timestamps are converted to ISO strings
+ */
+export type SerializedCalculator = Omit<Calculator, 'createdAt' | 'updatedAt'> & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+/**
  * Calculator Submission
  * Stores user submissions for analytics/lead generation
  */

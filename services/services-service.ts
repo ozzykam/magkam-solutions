@@ -14,7 +14,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Service, ServiceFilters, CreateServiceData } from '@/types/service';
+import { Service, ServiceFilters, CreateServiceData } from '@/types/services';
 
 const SERVICES_COLLECTION = 'services';
 

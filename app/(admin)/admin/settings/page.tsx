@@ -445,9 +445,9 @@ export default function SettingsPage() {
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Preview</h3>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p>• Navigation: "View {settings.serviceSettings?.serviceNamePlural || 'Services'}"</p>
-                  <p>• Page Title: "{settings.serviceSettings?.serviceNamePlural || 'Services'}"</p>
-                  <p>• Button: "Add {settings.serviceSettings?.serviceName || 'Service'}"</p>
+                  <p>• Navigation:&quot;View {settings.serviceSettings?.serviceNamePlural || 'Services'}&quot;</p>
+                  <p>• Page Title: &quot;{settings.serviceSettings?.serviceNamePlural || 'Services'}&quot;</p>
+                  <p>• Button: &quot;Add {settings.serviceSettings?.serviceName || 'Service'}&quot;</p>
                   <p>• URL: /{settings.serviceSettings?.urlSlug || 'services'}</p>
                 </div>
               </div>

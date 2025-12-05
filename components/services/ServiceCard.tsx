@@ -4,17 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Badge from '@/components/ui/Badge';
-import { Service, getEffectivePrice, calculateSalePercent, getSaleEndText, isCurrentlyOnSale } from '@/types/service';
-
-type ServiceWithDates = Omit<Service, 'createdAt' | 'updatedAt' | 'saleStart' | 'saleEnd'> & {
-  createdAt: Date;
-  updatedAt: Date;
-  saleStart?: Date;
-  saleEnd?: Date;
-};
+import { getEffectivePrice, calculateSalePercent, getSaleEndText, isCurrentlyOnSale, Service } from '@/types/services';
+import { ServiceWithOptionalDates } from '@/lib/utils/service-helpers';
 
 interface ServiceCardProps {
-  service: Service | ServiceWithDates;
+  service: ServiceWithOptionalDates;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ service }) => {
@@ -34,11 +28,13 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service }) => {
     // Handle both Firestore Timestamps and plain Date objects
     const createdAt = service.createdAt instanceof Date
       ? service.createdAt
-      : service.createdAt.toDate();
+      : 'toDate' in service.createdAt
+      ? service.createdAt.toDate()
+      : new Date();
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - createdAt.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 1; // Consider new if added within last 30 days
+    return diffDays <= 30; // Consider new if added within last 30 days
   });
 
   return (

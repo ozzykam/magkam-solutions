@@ -43,7 +43,7 @@ export default function FieldBuilder({
   /**
    * Update field property
    */
-  const updateProperty = (key: string, value: any) => {
+  const updateProperty = (key: string, value: string | number  | boolean | undefined) => {
     onChange({ ...field, [key]: value });
   };
 

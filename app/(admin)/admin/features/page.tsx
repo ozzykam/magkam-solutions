@@ -52,8 +52,9 @@ export default function FeaturesPage() {
     if (!settings) return;
 
     const pathParts = path.split('.');
-    const newFeatures = JSON.parse(JSON.stringify(settings.features || {}));
+    const newFeatures = JSON.parse(JSON.stringify(settings.features || {})) as Record<string, unknown>;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let current: any = newFeatures;
     for (let i = 0; i < pathParts.length - 1; i++) {
       if (!current[pathParts[i]]) {
@@ -115,7 +116,7 @@ export default function FeaturesPage() {
           <div className="flex-1">
             <h3 className="text-sm font-medium text-blue-900">Feature Toggles</h3>
             <p className="text-sm text-blue-800 mt-1">
-              Disable features you don't need to simplify your platform and improve performance.
+              Disable features you don&apos;t need to simplify your platform and improve performance.
               Changes take effect immediately after saving.
             </p>
           </div>

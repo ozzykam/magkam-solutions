@@ -73,6 +73,7 @@ export interface ServiceFilters {
   isFeatured?: boolean; // Only featured services
   onSale?: boolean; // Only services on sale
   search?: string; // Text search (client-side)
+  activeOnly?: boolean; // Only active/published services
 }
 
 /**

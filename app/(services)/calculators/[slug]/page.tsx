@@ -4,6 +4,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { getCalculatorBySlug } from '@/services/calculator-service';
 import ServiceCalculator from '@/components/calculators/ServiceCalculator';
+import { SerializedCalculator } from '@/types/calculator';
 
 interface CalculatorPageProps {
   params: {
@@ -55,7 +56,7 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
 
   // Serialize calculator for client component
   // Convert Firestore Timestamps to ISO strings
-  const serializedCalculator = {
+  const serializedCalculator: SerializedCalculator = {
     ...calculator,
     createdAt: calculator.createdAt.toDate().toISOString(),
     updatedAt: calculator.updatedAt.toDate().toISOString(),
@@ -65,7 +66,7 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
     <div className="flex flex-col min-h-screen">
         <Header />
         <div className="min-h-screen bg-gray-50 py-12">
-          <ServiceCalculator calculator={serializedCalculator as any} />
+          <ServiceCalculator calculator={serializedCalculator} />
         </div>
         <Footer />
     </div>

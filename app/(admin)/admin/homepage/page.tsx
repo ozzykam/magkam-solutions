@@ -56,8 +56,10 @@ export default function HomepageSettingsPage() {
     if (!settings) return;
 
     const pathParts = path.split('.');
-    const newHomepageSettings = JSON.parse(JSON.stringify(settings.homepageSettings || {}));
+    const newHomepageSettings = JSON.parse(JSON.stringify(settings.homepageSettings || {})) as HomepageSettings;
 
+    // Use Record for dynamic nested property access
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let current: any = newHomepageSettings;
     for (let i = 0; i < pathParts.length - 1; i++) {
       if (!current[pathParts[i]]) {
@@ -69,7 +71,7 @@ export default function HomepageSettingsPage() {
 
     setSettings({
       ...settings,
-      homepageSettings: newHomepageSettings as HomepageSettings,
+      homepageSettings: newHomepageSettings,
     });
   };
 

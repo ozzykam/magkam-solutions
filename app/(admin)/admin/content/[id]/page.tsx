@@ -15,8 +15,8 @@ import {
   generateSlug,
   isSlugUnique,
 } from '@/services/content-service';
-import { getServices } from '@/services/service-service';
-import { Service } from '@/types/service';
+import { getServices } from '@/services/services-service';
+import { Service } from '@/types/services';
 import { ContentCategory } from '@/types/content';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
