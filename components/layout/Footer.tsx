@@ -1,9 +1,5 @@
-import React, { useEffect, useState} from 'react';
+import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { StoreSettings } from '@/types/business-info';
 
 
 const Footer: React.FC = () => {
