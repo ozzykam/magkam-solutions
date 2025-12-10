@@ -16,14 +16,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const storeSettingsDoc = await getDoc(doc(db, 'storeSettings', 'main'));
   const storeSettings = storeSettingsDoc.data() as StoreSettings | undefined;
   const businessName = storeSettings?.businessName || 'Our Store';
+  const tagline = storeSettings?.tagline || '';
   const businessDescription = storeSettings?.businessDescription || 'The best quality near you';
 
+  // Use tagline for title if available, otherwise use business description
+  const pageTitle = tagline ? `${businessName} - ${tagline}` : `${businessName} - ${businessDescription}`;
+  const ogTitle = tagline ? `${businessName} - ${tagline}` : `${businessName} - Fresh Local Services`;
+  const twitterTitle = tagline ? `${businessName} - ${tagline}` : `${businessName} - Local Services`;
+
   return {
-    title: `${businessName} - ${businessDescription}`,
+    title: pageTitle,
     description: businessDescription,
     keywords: 'local services, fresh food, farmers market, organic, local delivery, farm to table',
     openGraph: {
-      title: `${businessName} - Fresh Local Services`,
+      title: ogTitle,
       description: businessDescription,
       type: 'website',
       locale: 'en_US',
@@ -31,7 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${businessName} - Local Services`,
+      title: twitterTitle,
       description: businessDescription,
     },
   };
@@ -60,6 +66,7 @@ export default async function Home() {
   const storeSettingsDoc = await getDoc(doc(db, 'storeSettings', 'main'));
   const storeSettings = storeSettingsDoc.data() as StoreSettings | undefined;
   const businessName = storeSettings?.businessName || 'Our Store';
+  const tagline = storeSettings?.tagline || '';
   const businessDescription = storeSettings?.businessDescription || 'The best quality near you';
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://yourstore.com';
 

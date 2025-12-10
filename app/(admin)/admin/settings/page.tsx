@@ -257,6 +257,14 @@ export default function SettingsPage() {
             placeholder="Local Market"
           />
 
+          <Input
+            label="Tagline"
+            value={settings.tagline || ''}
+            onChange={(e) => updateSetting('tagline', e.target.value)}
+            placeholder="Your one-line business tagline"
+            helperText="A short, catchy phrase that describes your business"
+          />
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Business Description

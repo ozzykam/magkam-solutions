@@ -79,6 +79,7 @@ export interface StoreSettings {
 
   // Business Information
   businessName?: string;
+  tagline?: string;
   businessDescription?: string;
   email?: string;
   phone?: string;

@@ -40,6 +40,7 @@ export default function SEOSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<SEOSettings | null>(null);
   const [businessName, setBusinessName] = useState('Your Store');
+  const [tagline, setTagline] = useState('');
 
   // Global settings state
   const [globalKeywords, setGlobalKeywords] = useState<string[]>([]);
@@ -86,6 +87,7 @@ export default function SEOSettingsPage() {
         // Load business settings
         const businessSettings = await getStoreSettings();
         setBusinessName(businessSettings.businessName || 'Your Store');
+        setTagline(businessSettings.tagline || '');
 
         // Set global form values
         setGlobalKeywords(seoSettings.global.keywords || []);
@@ -515,7 +517,7 @@ export default function SEOSettingsPage() {
           <Card>
             <div className="p-6">
               <SEOPreview
-                title={`${businessName} - Shop Fresh Local Services`}
+                title={tagline ? `${businessName} - ${tagline}` : businessName}
                 description={globalDescription || DEFAULT_SEO_SETTINGS.global.description}
                 url="yourstore.com"
               />
