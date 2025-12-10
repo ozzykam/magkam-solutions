@@ -170,7 +170,7 @@ const Header: React.FC = () => {
               </Link>
             )}
 
-            {/* Solutions Dropdown */}
+            {/* Solutions Dropdown -- Disabled for Now
             <div className="relative">
               <button
                 onClick={() => setSolutionsMenuOpen(!solutionsMenuOpen)}
@@ -232,7 +232,7 @@ const Header: React.FC = () => {
                   </Link>
                 </div>
               )}
-            </div>
+            </div> */}
 
             {features.calculators?.enabled && features.calculators?.showInNavigation && (
               <Link href="/calculators" className="text-gray-700 hover:text-primary-600 transition-colors">

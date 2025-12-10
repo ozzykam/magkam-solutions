@@ -9,14 +9,38 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
+const SERVICE_PRESETS = {
+  services: { singular: 'Service', plural: 'Services', slug: 'services' },
+  products: { singular: 'Product', plural: 'Products', slug: 'products' },
+  solutions: { singular: 'Solution', plural: 'Solutions', slug: 'solutions' },
+  offerings: { singular: 'Offering', plural: 'Offerings', slug: 'offerings' },
+} as const;
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [selectedServicePreset, setSelectedServicePreset] = useState<'services' | 'products' | 'solutions' | 'offerings'>('services');
 
   useEffect(() => {
     loadSettings();
   }, []);
+
+  // Detect which preset is currently selected based on settings
+  useEffect(() => {
+    const slug = settings?.serviceSettings?.urlSlug?.toLowerCase();
+    if (!slug) return;
+
+    if (slug === 'products') {
+      setSelectedServicePreset('products');
+    } else if (slug === 'solutions') {
+      setSelectedServicePreset('solutions');
+    } else if (slug === 'offerings') {
+      setSelectedServicePreset('offerings');
+    } else {
+      setSelectedServicePreset('services');
+    }
+  }, [settings?.serviceSettings?.urlSlug]);
 
   const loadSettings = async () => {
     try {
@@ -143,6 +167,24 @@ export default function SettingsPage() {
         showViewCount: settings.contentSettings?.showViewCount ?? false,
         allowVendorPosts: settings.contentSettings?.allowVendorPosts ?? false,
         [field]: value,
+      },
+    });
+  };
+
+  const getServicePlaceholders = () => SERVICE_PRESETS[selectedServicePreset];
+
+  const applyServicePreset = (preset: 'services' | 'products' | 'solutions' | 'offerings') => {
+    if (!settings) return;
+
+    const presetData = SERVICE_PRESETS[preset];
+    setSelectedServicePreset(preset);
+    setSettings({
+      ...settings,
+      serviceSettings: {
+        enabled: settings.serviceSettings?.enabled ?? true,
+        serviceName: presetData.singular,
+        serviceNamePlural: presetData.plural,
+        urlSlug: presetData.slug,
       },
     });
   };
@@ -366,45 +408,45 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      updateServiceSettings('serviceName', 'Service');
-                      updateServiceSettings('serviceNamePlural', 'Services');
-                      updateServiceSettings('urlSlug', 'services');
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+                    onClick={() => applyServicePreset('services')}
+                    className={`px-4 py-2 border rounded-lg text-sm font-medium ${
+                      selectedServicePreset === 'services'
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                    }`}
                   >
                     Services
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      updateServiceSettings('serviceName', 'Product');
-                      updateServiceSettings('serviceNamePlural', 'Products');
-                      updateServiceSettings('urlSlug', 'products');
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+                    onClick={() => applyServicePreset('products')}
+                    className={`px-4 py-2 border rounded-lg text-sm font-medium ${
+                      selectedServicePreset === 'products'
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                    }`}
                   >
                     Products
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      updateServiceSettings('serviceName', 'Solution');
-                      updateServiceSettings('serviceNamePlural', 'Solutions');
-                      updateServiceSettings('urlSlug', 'solutions');
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+                    onClick={() => applyServicePreset('solutions')}
+                    className={`px-4 py-2 border rounded-lg text-sm font-medium ${
+                      selectedServicePreset === 'solutions'
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                    }`}
                   >
                     Solutions
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      updateServiceSettings('serviceName', 'Offering');
-                      updateServiceSettings('serviceNamePlural', 'Offerings');
-                      updateServiceSettings('urlSlug', 'offerings');
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700"
+                    onClick={() => applyServicePreset('offerings')}
+                    className={`px-4 py-2 border rounded-lg text-sm font-medium ${
+                      selectedServicePreset === 'offerings'
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                    }`}
                   >
                     Offerings
                   </button>
@@ -420,7 +462,7 @@ export default function SettingsPage() {
                   label="Name (Singular)"
                   value={settings.serviceSettings?.serviceName || 'Service'}
                   onChange={(e) => updateServiceSettings('serviceName', e.target.value)}
-                  placeholder="Service, Product, Solution"
+                  placeholder={getServicePlaceholders().singular}
                   helperText="e.g., 'Service' or 'Product'"
                 />
 
@@ -428,7 +470,7 @@ export default function SettingsPage() {
                   label="Name (Plural)"
                   value={settings.serviceSettings?.serviceNamePlural || 'Services'}
                   onChange={(e) => updateServiceSettings('serviceNamePlural', e.target.value)}
-                  placeholder="Services, Products, Solutions"
+                  placeholder={getServicePlaceholders().plural}
                   helperText="e.g., 'Services' or 'Products'"
                 />
 
@@ -436,7 +478,7 @@ export default function SettingsPage() {
                   label="URL Slug"
                   value={settings.serviceSettings?.urlSlug || 'services'}
                   onChange={(e) => updateServiceSettings('urlSlug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                  placeholder="services, products, solutions"
+                  placeholder={getServicePlaceholders().slug}
                   helperText="Used in URLs (e.g., /services)"
                 />
               </div>
