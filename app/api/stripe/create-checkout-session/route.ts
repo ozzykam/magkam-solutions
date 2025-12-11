@@ -6,7 +6,15 @@ export async function POST(request: NextRequest) {
   try {
     const { invoiceId, userEmail, amount, processingFee } = await request.json();
 
+    console.log('[Stripe Checkout] Request received:', {
+      invoiceId,
+      userEmail,
+      amount,
+      processingFee
+    });
+
     if (!invoiceId || !userEmail || !amount) {
+      console.error('[Stripe Checkout] Missing required fields:', { invoiceId, userEmail, amount });
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -14,14 +22,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the invoice
+    console.log('[Stripe Checkout] Fetching invoice:', invoiceId);
     const invoice = await getInvoiceById(invoiceId);
 
     if (!invoice) {
+      console.error('[Stripe Checkout] Invoice not found:', invoiceId);
       return NextResponse.json(
         { error: 'Invoice not found' },
         { status: 404 }
       );
     }
+
+    console.log('[Stripe Checkout] Invoice found:', {
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      clientEmail: invoice.client.email,
+      amountDue: invoice.amountDue,
+      status: invoice.status
+    });
 
     // Verify the user has access to this invoice
     if (invoice.client.email.toLowerCase() !== userEmail.toLowerCase()) {
