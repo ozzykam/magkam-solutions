@@ -158,8 +158,7 @@ $RECYCLE.BIN/
 
 # Sales and marketing materials (private)
 ../pitch.md
-proposals/
-client-info/
+/client-info/
 
 # Business development documents (private)
 business-docs/
