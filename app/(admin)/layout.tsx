@@ -25,6 +25,7 @@ import {
   HomeIcon,
   DocumentTextIcon,
   AdjustmentsHorizontalIcon,
+  CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 
 export default function AdminLayout({
@@ -124,6 +125,16 @@ export default function AdminLayout({
             <div onClick={() => setIsSidebarOpen(false)}>
               <NavLink href="/admin" icon={ChartBarIcon}>
                 Dashboard
+              </NavLink>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/proposals" icon={CurrencyDollarIcon} badge={unreadCount > 0 ? unreadCount : undefined}>
+                Proposals
+              </NavLink>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/invoices" icon={CurrencyDollarIcon} badge={unreadCount > 0 ? unreadCount : undefined}>
+                Invoices
               </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
