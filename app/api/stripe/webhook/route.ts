@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
-import { recordPayment } from '@/services/invoice-service';
-import { Timestamp } from 'firebase/firestore';
+import { getAdminFirestore } from '@/lib/firebase/admin';
+import { Invoice, InvoiceStatus, PaymentInfo } from '@/types/invoice';
 import Stripe from 'stripe';
+import { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
 
 // Disable body parsing for webhooks
 export const runtime = 'nodejs';
@@ -51,20 +52,61 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ received: true });
         }
 
-        // Record payment in Firestore
-        // Only record the invoice amount, not the processing fee (that goes to Stripe/covers fees)
-        await recordPayment(
-          invoiceId,
-          'system', // System user for automated payments
-          {
-            stripePaymentIntentId: session.payment_intent as string,
-            amount: invoiceAmount, // Invoice amount only, not including processing fee
-            paymentMethod: 'card',
-            transactionNote: `Stripe payment - Session ${session.id}${processingFee > 0 ? ` (includes $${processingFee.toFixed(2)} processing fee)` : ''}`,
-          }
-        );
+        // Record payment using Admin SDK (bypasses security rules)
+        const firestore = getAdminFirestore();
+        const invoiceRef = firestore.collection('invoices').doc(invoiceId);
+        const invoiceDoc = await invoiceRef.get();
 
-        console.log(`Payment recorded for invoice ${invoiceId}: $${invoiceAmount} (processing fee: $${processingFee})`);
+        if (!invoiceDoc.exists) {
+          console.error('[Webhook] Invoice not found:', invoiceId);
+          return NextResponse.json({ received: true });
+        }
+
+        const invoice = {
+          id: invoiceDoc.id,
+          ...invoiceDoc.data(),
+        } as Invoice;
+
+        // Create payment record
+        const payment: PaymentInfo = {
+          stripePaymentIntentId: session.payment_intent as string,
+          amount: invoiceAmount, // Invoice amount only, not including processing fee
+          paymentMethod: 'card',
+          transactionNote: `Stripe payment - Session ${session.id}${processingFee > 0 ? ` (includes $${processingFee.toFixed(2)} processing fee)` : ''}`,
+          paidAt: AdminTimestamp.now() as any,
+        };
+
+        // Calculate new totals
+        const updatedPayments = [...invoice.payments, payment];
+        const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
+        const amountDue = invoice.total - totalPaid;
+
+        // Determine new status
+        let newStatus: InvoiceStatus;
+        if (amountDue <= 0) {
+          newStatus = InvoiceStatus.PAID;
+        } else if (totalPaid > 0) {
+          newStatus = InvoiceStatus.PARTIALLY_PAID;
+        } else {
+          newStatus = invoice.status;
+        }
+
+        // Update invoice
+        const updates: any = {
+          payments: updatedPayments,
+          amountPaid: totalPaid,
+          amountDue: amountDue,
+          status: newStatus,
+          updatedAt: AdminTimestamp.now(),
+        };
+
+        if (amountDue <= 0) {
+          updates.paidAt = AdminTimestamp.now();
+        }
+
+        await invoiceRef.update(updates);
+
+        console.log(`[Webhook] Payment recorded for invoice ${invoiceId}: $${invoiceAmount} (processing fee: $${processingFee})`);
         break;
       }
 

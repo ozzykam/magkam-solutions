@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
-import { getInvoiceById } from '@/services/invoice-service';
+import { getAdminFirestore } from '@/lib/firebase/admin';
+import { Invoice } from '@/types/invoice';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,17 +22,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch the invoice
+    // Fetch the invoice using Admin SDK (bypasses security rules)
     console.log('[Stripe Checkout] Fetching invoice:', invoiceId);
-    const invoice = await getInvoiceById(invoiceId);
+    const firestore = getAdminFirestore();
+    const invoiceDoc = await firestore.collection('invoices').doc(invoiceId).get();
 
-    if (!invoice) {
+    if (!invoiceDoc.exists) {
       console.error('[Stripe Checkout] Invoice not found:', invoiceId);
       return NextResponse.json(
         { error: 'Invoice not found' },
         { status: 404 }
       );
     }
+
+    const invoice = {
+      id: invoiceDoc.id,
+      ...invoiceDoc.data(),
+    } as Invoice;
 
     console.log('[Stripe Checkout] Invoice found:', {
       id: invoice.id,
