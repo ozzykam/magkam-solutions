@@ -6,6 +6,7 @@ import {
   sendEmailVerification,
   updateProfile,
   updatePassword,
+  updateEmail,
   EmailAuthProvider,
   reauthenticateWithCredential,
   setPersistence,
@@ -181,5 +182,38 @@ export const changePassword = async (currentPassword: string, newPassword: strin
       throw new Error(err.message || 'Failed to change password');
     }
     throw new Error('Failed to change password');
+  }
+};
+
+/**
+ * Update user email address
+ */
+export const updateUserEmail = async (newEmail: string): Promise<void> => {
+  try {
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error('No user is currently signed in');
+    }
+
+    // Update email in Firebase Auth
+    await updateEmail(user, newEmail);
+
+    // Send verification email to new address
+    await sendEmailVerification(user);
+  } catch (error) {
+    console.error('Update email error:', error);
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+      const err = error as { code?: string; message?: string };
+      if (err.code === 'auth/requires-recent-login') {
+        throw new Error('For security reasons, please sign out and sign in again to change your email');
+      } else if (err.code === 'auth/email-already-in-use') {
+        throw new Error('This email address is already in use by another account');
+      } else if (err.code === 'auth/invalid-email') {
+        throw new Error('Invalid email address');
+      }
+      throw new Error(err.message || 'Failed to update email');
+    }
+    throw new Error('Failed to update email');
   }
 };

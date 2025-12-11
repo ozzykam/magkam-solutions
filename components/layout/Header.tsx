@@ -18,8 +18,8 @@ const Header: React.FC = () => {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [solutionsMenuOpen, setSolutionsMenuOpen] = useState(false);
-  const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
+  // const [solutionsMenuOpen, setSolutionsMenuOpen] = useState(false);
+  // const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [desktopSearchOpen, setDesktopSearchOpen] = useState(false);
   const [contentSettings, setContentSettings] = useState<{
@@ -412,13 +412,13 @@ const Header: React.FC = () => {
                 </Link>
               )}
 
-              {/* Mobile Solutions Dropdown */}
+              {/* Mobile Solutions Dropdown
               <div>
                 <button
                   onClick={() => setMobileSolutionsOpen(!mobileSolutionsOpen)}
                   className="flex items-center gap-1 text-gray-700 hover:text-primary-600 transition-colors w-full text-left"
                 >
-                  Solutions
+                  Solutionssss
                   <svg className={`w-4 h-4 transition-transform ${mobileSolutionsOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -477,7 +477,7 @@ const Header: React.FC = () => {
                     </Link>
                   </div>
                 )}
-              </div>
+              </div> */}
 
               {features.calculators?.enabled && features.calculators?.showInNavigation && (
                 <Link

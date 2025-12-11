@@ -235,7 +235,7 @@ export default function AdminLayout({
             href="/"
             className="mt-3 w-full block text-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            ← Back to Store
+            ← Back to Main
           </Link>
         </div>
       </aside>

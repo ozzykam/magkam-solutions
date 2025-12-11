@@ -317,5 +317,69 @@ service cloud.firestore {
       // Only admins can delete submissions
       allow delete: if isAdmin();
     }
+
+    // Proposals collection
+    match /proposals/{proposalId} {
+      // Admins can read all proposals
+      // Customers can read their own proposals (by clientId or email)
+      allow read: if isAdmin() ||
+                    (isSignedIn() && (
+                      resource.data.clientId == request.auth.uid ||
+                      resource.data.client.email == request.auth.token.email
+                    ));
+
+      // Only admins can create proposals
+      allow create: if isAdmin() &&
+                      request.resource.data.createdBy == request.auth.uid;
+
+      // Admins can update proposals
+      // Customers can update their own proposals (e.g., responding to proposals)
+      allow update: if isAdmin() ||
+                      (isSignedIn() && (
+                        resource.data.clientId == request.auth.uid ||
+                        resource.data.client.email == request.auth.token.email
+                      ));
+
+      // Only admins can delete proposals
+      allow delete: if isAdmin();
+    }
+
+    // Invoices collection
+    match /invoices/{invoiceId} {
+      // Admins can read all invoices
+      // Customers can read their own invoices (by clientId or email)
+      allow read: if isAdmin() ||
+                    (isSignedIn() && (
+                      resource.data.clientId == request.auth.uid ||
+                      resource.data.client.email == request.auth.token.email
+                    ));
+
+      // Only admins can create invoices
+      allow create: if isAdmin() &&
+                      request.resource.data.createdBy == request.auth.uid;
+
+      // Admins can update invoices
+      // Customers can update their own invoices (e.g., marking as viewed)
+      allow update: if isAdmin() ||
+                      (isSignedIn() && (
+                        resource.data.clientId == request.auth.uid ||
+                        resource.data.client.email == request.auth.token.email
+                      ));
+
+      // Only admins can delete invoices
+      allow delete: if isAdmin();
+    }
+
+    // Counters collection (for generating sequential proposal/invoice numbers)
+    match /counters/{counterId} {
+      // Only admins can read counters
+      allow read: if isAdmin();
+
+      // Only admins can create/update counters
+      allow create, update: if isAdmin();
+
+      // Only admins can delete counters
+      allow delete: if isAdmin();
+    }
   }
 }

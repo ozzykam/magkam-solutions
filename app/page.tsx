@@ -66,7 +66,6 @@ export default async function Home() {
   const storeSettingsDoc = await getDoc(doc(db, 'storeSettings', 'main'));
   const storeSettings = storeSettingsDoc.data() as StoreSettings | undefined;
   const businessName = storeSettings?.businessName || 'Our Store';
-  const tagline = storeSettings?.tagline || '';
   const businessDescription = storeSettings?.businessDescription || 'The best quality near you';
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://yourstore.com';
 
