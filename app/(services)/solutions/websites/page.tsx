@@ -202,7 +202,7 @@ export default async function WebsitesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
               <PricingTier
                 name="Basic Website"
-                priceRange="$1,200 - $3,000"
+                priceRange="$750 - $3,000"
                 description="For businesses needing a clean, fast, professional online presence."
                 features={[
                   'Up to 5 custom pages',
