@@ -225,7 +225,7 @@ export const DEFAULT_STORE_SETTINGS: Omit<StoreSettings, 'id' | 'updatedAt'> = {
       subtitle: 'Expert solutions to help your business grow and succeed.',
       primaryCTA: {
         text: 'View Our Services',
-        link: '/services',
+        link: '/solutions',
       },
       secondaryCTA: {
         text: 'Learn More',

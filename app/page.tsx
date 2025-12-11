@@ -75,7 +75,7 @@ export default async function Home() {
       headline: 'Professional Services',
       highlightedText: 'Tailored to Your Needs',
       subtitle: 'Expert solutions to help your business grow and succeed.',
-      primaryCTA: { text: 'View Services', link: '/services' },
+      primaryCTA: { text: 'View Services', link: '/solutions' },
       secondaryCTA: { text: 'Learn More', link: '/about' },
     },
     features: {

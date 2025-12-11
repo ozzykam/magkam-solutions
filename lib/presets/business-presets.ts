@@ -48,7 +48,7 @@ export const BUSINESS_PRESETS: BusinessPreset[] = [
           subtitle: 'Custom web applications and digital experiences that drive results for your business',
           primaryCTA: {
             text: 'View Our Services',
-            link: '/services',
+            link: '/solutions',
           },
           secondaryCTA: {
             text: 'See Our Work',

@@ -263,7 +263,7 @@ export default function AboutPage() {
                 Start a Project
               </Link>
               <Link
-                href="/services"
+                href="/solutions"
                 className="bg-primary-700 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-800 transition-colors border-2 border-white"
               >
                 View Services
