@@ -72,10 +72,9 @@ export function getAdminAuth() {
 export function getAdminFirestore() {
   const app = getAdminApp();
 
-  // Use the same database ID as the client-side config
-  // This must match the database ID in lib/firebase/config.ts
-  const databaseId = 'local-marketv2';
-  const firestore = getFirestore(app, databaseId);
+  // Use the default Firestore database (same as client-side config)
+  // If you need a specific database, pass the database ID as a parameter
+  const firestore = getFirestore(app);
 
   return firestore;
 }
