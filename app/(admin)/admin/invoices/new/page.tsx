@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { InvoiceStatus, LineItem, ClientInfo, TaxConfig } from '@/types/invoice';
+import { InvoiceStatus, LineItem, ClientInfo, TaxConfig, Invoice } from '@/types/invoice';
 import { createInvoice } from '@/services/invoice-service';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { Timestamp } from 'firebase/firestore';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -84,7 +85,7 @@ export default function NewInvoicePage() {
     }
   };
 
-  const updateLineItem = (id: string, field: keyof LineItem, value: any) => {
+  const updateLineItem = (id: string, field: keyof LineItem, value: string | number) => {
     setLineItems(
       lineItems.map((item) => {
         if (item.id === id) {
@@ -148,7 +149,7 @@ export default function NewInvoicePage() {
       setLoading(true);
 
       // Build invoice data conditionally to avoid undefined values
-      const invoiceData: any = {
+      const invoiceData: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt' | 'createdBy'> = {
         status,
         client: {
           name: clientInfo.name,
@@ -160,8 +161,10 @@ export default function NewInvoicePage() {
         discountAmount: discountAmount,
         total: totals,
         amountPaid: 0,
-        issueDate: new Date(issueDate),
-        dueDate: new Date(dueDate),
+        amountDue: totals,
+        payments: [],
+        issueDate: Timestamp.fromDate(new Date(issueDate)),
+        dueDate: Timestamp.fromDate(new Date(dueDate)),
       };
 
       // Only add optional fields if they have values
@@ -193,7 +196,7 @@ export default function NewInvoicePage() {
         }
       }
       if (paymentTerms) {
-        invoiceData.paymentTerms = paymentTerms;
+        invoiceData.terms = paymentTerms;
       }
       if (terms) {
         invoiceData.terms = terms;
@@ -378,7 +381,7 @@ export default function NewInvoicePage() {
             </Button>
           </div>
           <div className="space-y-4">
-            {lineItems.map((item, index) => (
+            {lineItems.map((item) => (
               <div key={item.id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-start gap-4">
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">

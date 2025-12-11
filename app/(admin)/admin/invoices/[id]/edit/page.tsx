@@ -481,7 +481,7 @@ export default function EditInvoicePage() {
             </Button>
           </div>
           <div className="space-y-4">
-            {lineItems.map((item, index) => (
+            {lineItems.map((item) => (
               <div key={item.id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-start gap-4">
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">

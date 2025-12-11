@@ -345,7 +345,7 @@ export default function ProfilePage() {
             </form>
           ) : (
             <p className="text-gray-600 text-sm">
-              Your password is securely encrypted. Click "Change Password" to update it.
+              Your password is securely encrypted. Click &apos;Change Password&apos; to update it.
             </p>
           )}
         </div>

@@ -417,7 +417,7 @@ const getNextInvoiceSequence = async (): Promise<number> => {
  * Create a new invoice
  */
 export const createInvoice = async (
-  invoiceData: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt'>,
+  invoiceData: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt' | 'createdBy'>,
   userId: string
 ): Promise<string> => {
   try {

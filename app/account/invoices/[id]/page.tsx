@@ -123,14 +123,18 @@ export default function CustomerInvoiceDetailPage() {
     }).format(amount);
   };
 
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
+  const formatDate = (timestamp: { toDate?: () => Date } | Date | string | null | undefined) => {
+    if (!timestamp) return '';
+    const date = typeof timestamp === 'object' && timestamp !== null && 'toDate' in timestamp && timestamp.toDate
+      ? timestamp.toDate()
+      : new Date(timestamp as Date | string);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
-    }).format(date);
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   };
 
   const isOverdue = () => {

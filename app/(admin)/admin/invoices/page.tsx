@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Invoice, InvoiceStatus } from '@/types/invoice';
 import { getInvoices, deleteInvoice } from '@/services/invoice-service';
 import Card from '@/components/ui/Card';
@@ -14,7 +13,6 @@ import {
   PencilIcon,
   TrashIcon,
   EyeIcon,
-  PaperAirplaneIcon,
   CreditCardIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/solid';
@@ -30,7 +28,6 @@ const STATUS_COLORS: Record<InvoiceStatus, 'default' | 'success' | 'warning' | '
 };
 
 export default function InvoicesPage() {
-  const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,14 +112,18 @@ export default function InvoicesPage() {
     }).format(amount);
   };
 
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
+  const formatDate = (timestamp: { toDate?: () => Date } | Date | string | null | undefined) => {
+    if (!timestamp) return '';
+    const date = typeof timestamp === 'object' && timestamp !== null && 'toDate' in timestamp && timestamp.toDate
+      ? timestamp.toDate()
+      : new Date(timestamp as Date | string);
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-    }).format(date);
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   };
 
   const isOverdue = (invoice: Invoice) => {
