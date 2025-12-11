@@ -366,7 +366,7 @@ const Header: React.FC = () => {
                   </Link>
                   <Link href="/register">
                     <Button variant="primary" size="sm">
-                      Sign Up
+                      Register
                     </Button>
                   </Link>
                 </div>
@@ -504,7 +504,7 @@ const Header: React.FC = () => {
                   </Link>
                   <Link href="/register">
                     <Button variant="primary" size="sm" fullWidth>
-                      Sign Up
+                      Register
                     </Button>
                   </Link>
                 </>
