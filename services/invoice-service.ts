@@ -272,8 +272,11 @@ export const acceptProposal = async (id: string): Promise<void> => {
 
   // Send email notification to admin
   try {
+    console.log('[Proposal Approval] Starting email notification process...');
+
     // Get full proposal data
     const proposal = await getProposalById(id);
+    console.log('[Proposal Approval] Proposal loaded:', proposal ? 'Yes' : 'No');
 
     if (proposal) {
       // Get admin email from business settings
@@ -281,11 +284,19 @@ export const acceptProposal = async (id: string): Promise<void> => {
       const settings = await getStoreSettings();
       const adminEmail = settings.adminNotificationEmail || settings.email;
 
+      console.log('[Proposal Approval] Admin email from settings:', adminEmail || 'NOT CONFIGURED');
+      console.log('[Proposal Approval] Settings:', {
+        hasAdminNotificationEmail: !!settings.adminNotificationEmail,
+        hasEmail: !!settings.email,
+      });
+
       if (adminEmail) {
+        console.log('[Proposal Approval] Sending email to:', adminEmail);
+
         // Send email notification
         const { sendProposalApprovedEmail } = await import('@/lib/email/email-service');
 
-        await sendProposalApprovedEmail(adminEmail, {
+        const emailData = {
           proposalNumber: proposal.proposalNumber,
           customerName: proposal.client.name,
           customerEmail: proposal.client.email,
@@ -305,16 +316,38 @@ export const acceptProposal = async (id: string): Promise<void> => {
             hour: 'numeric',
             minute: '2-digit',
           }),
+        };
+
+        console.log('[Proposal Approval] Email data prepared:', {
+          proposalNumber: emailData.proposalNumber,
+          customerName: emailData.customerName,
+          lineItemsCount: emailData.lineItems.length,
+          total: emailData.total,
         });
 
-        console.log(`Proposal approval notification sent to ${adminEmail}`);
+        const emailSent = await sendProposalApprovedEmail(adminEmail, emailData);
+
+        console.log('[Proposal Approval] Email sent result:', emailSent ? 'SUCCESS ✅' : 'FAILED ❌');
+
+        if (emailSent) {
+          console.log(`[Proposal Approval] ✅ Notification sent to ${adminEmail}`);
+        } else {
+          console.error(`[Proposal Approval] ❌ Failed to send notification to ${adminEmail}`);
+        }
       } else {
-        console.warn('No admin email configured for proposal notifications');
+        console.warn('[Proposal Approval] ⚠️ No admin email configured for proposal notifications');
+        console.warn('[Proposal Approval] Please set adminNotificationEmail or email in Store Settings');
       }
+    } else {
+      console.error('[Proposal Approval] ❌ Could not load proposal data');
     }
   } catch (emailError) {
     // Don't fail the proposal acceptance if email fails
-    console.error('Failed to send proposal approval email:', emailError);
+    console.error('[Proposal Approval] ❌ Exception sending email:', emailError);
+    console.error('[Proposal Approval] Error details:', {
+      message: emailError instanceof Error ? emailError.message : 'Unknown error',
+      stack: emailError instanceof Error ? emailError.stack : undefined,
+    });
   }
 };
 
