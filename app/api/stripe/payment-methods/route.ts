@@ -73,10 +73,49 @@ export async function GET(request: NextRequest) {
     }
 
     // Retrieve payment methods
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: customerId,
-      type: 'card',
-    });
+    let paymentMethods;
+    try {
+      paymentMethods = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: 'card',
+      });
+    } catch (error: any) {
+      // Handle case where customer ID is from test mode but we're in live mode
+      if (error.code === 'resource_missing' && error.param === 'customer') {
+        console.log('[Payment Methods API] Customer not found (likely test mode ID in live mode), clearing and recreating...');
+
+        // Clear the invalid customer ID from Firestore
+        if (!usersSnapshot.empty) {
+          await firestore.collection('users').doc(usersSnapshot.docs[0].id).update({
+            stripeCustomerId: null,
+          });
+        }
+
+        // Create a new customer in live mode
+        const customer = await stripe.customers.create({
+          email: email.toLowerCase(),
+          metadata: {
+            firebaseUid: usersSnapshot.docs[0]?.id || 'unknown',
+          },
+        });
+        customerId = customer.id;
+
+        // Save new customer ID
+        if (!usersSnapshot.empty) {
+          await firestore.collection('users').doc(usersSnapshot.docs[0].id).update({
+            stripeCustomerId: customerId,
+          });
+        }
+
+        // Try again with new customer ID
+        paymentMethods = await stripe.paymentMethods.list({
+          customer: customerId,
+          type: 'card',
+        });
+      } else {
+        throw error;
+      }
+    }
 
     // Get default payment method
     const customer = await stripe.customers.retrieve(customerId);

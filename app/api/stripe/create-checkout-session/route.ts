@@ -99,6 +99,25 @@ export async function POST(request: NextRequest) {
     if (!usersSnapshot.empty) {
       const userData = usersSnapshot.docs[0].data();
       customerId = userData.stripeCustomerId;
+
+      // Validate the customer ID exists in Stripe (handles test/live mode mismatch)
+      if (customerId) {
+        try {
+          await stripe.customers.retrieve(customerId);
+          console.log('[Stripe Checkout] Validated existing Stripe customer:', customerId);
+        } catch (error: any) {
+          if (error.code === 'resource_missing') {
+            console.log('[Stripe Checkout] Customer ID invalid (likely test mode in live mode), clearing...');
+            // Clear invalid customer ID
+            await firestore.collection('users').doc(usersSnapshot.docs[0].id).update({
+              stripeCustomerId: null,
+            });
+            customerId = undefined;
+          } else {
+            throw error;
+          }
+        }
+      }
     }
 
     // If no customer ID in Firestore, search Stripe by email
