@@ -44,6 +44,7 @@ export interface User {
   role: UserRole;
   permissions?: EmployeePermissions; // Only for EMPLOYEE and MANAGER roles
   addresses: Address[];
+  stripeCustomerId?: string; // Stripe Customer ID for payment methods
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

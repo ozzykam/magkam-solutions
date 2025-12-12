@@ -415,6 +415,9 @@ export default function ViewInvoicePage() {
                         </p>
                         <p className="text-sm text-gray-500">
                           {formatDate(payment.paidAt)} • {payment.paymentMethod}
+                          {payment.cardBrand && payment.cardLast4 && (
+                            <> • {payment.cardBrand.charAt(0).toUpperCase() + payment.cardBrand.slice(1)} ••••{payment.cardLast4}</>
+                          )}
                           {payment.stripeChargeId && ` • ${payment.stripeChargeId}`}
                         </p>
                         {payment.transactionNote && (

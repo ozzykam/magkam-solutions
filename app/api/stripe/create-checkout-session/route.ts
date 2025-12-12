@@ -85,6 +85,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get or create Stripe Customer for this user
+    console.log('[Stripe Checkout] Getting/creating Stripe Customer for:', userEmail);
+    let customerId: string | undefined;
+
+    // First, try to get customer ID from Firestore user record
+    const usersSnapshot = await firestore
+      .collection('users')
+      .where('email', '==', userEmail.toLowerCase())
+      .limit(1)
+      .get();
+
+    if (!usersSnapshot.empty) {
+      const userData = usersSnapshot.docs[0].data();
+      customerId = userData.stripeCustomerId;
+    }
+
+    // If no customer ID in Firestore, search Stripe by email
+    if (!customerId) {
+      const customers = await stripe.customers.list({
+        email: userEmail.toLowerCase(),
+        limit: 1,
+      });
+
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        console.log('[Stripe Checkout] Found existing Stripe customer:', customerId);
+      } else {
+        // Create new Stripe customer
+        const customer = await stripe.customers.create({
+          email: userEmail.toLowerCase(),
+          name: invoice.client.name,
+          metadata: {
+            firebaseUid: usersSnapshot.docs[0]?.id || 'unknown',
+          },
+        });
+        customerId = customer.id;
+        console.log('[Stripe Checkout] Created new Stripe customer:', customerId);
+      }
+
+      // Save customer ID to Firestore if we have a user record
+      if (!usersSnapshot.empty) {
+        await firestore.collection('users').doc(usersSnapshot.docs[0].id).update({
+          stripeCustomerId: customerId,
+          updatedAt: new Date(),
+        });
+        console.log('[Stripe Checkout] Saved Stripe customer ID to Firestore');
+      }
+    } else {
+      console.log('[Stripe Checkout] Using existing Stripe customer from Firestore:', customerId);
+    }
+
     // Build line items
     const lineItems = [
       {
@@ -123,8 +174,15 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
-      customer_email: invoice.client.email,
+      customer: customerId, // Use Stripe Customer ID instead of email
       line_items: lineItems,
+      payment_intent_data: {
+        setup_future_usage: 'on_session', // Save payment method for future use
+        metadata: {
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+        },
+      },
       metadata: {
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,

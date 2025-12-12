@@ -67,6 +67,32 @@ export async function POST(request: NextRequest) {
           ...invoiceDoc.data(),
         } as Invoice;
 
+        // Retrieve payment method details from Stripe
+        let cardBrand: string | undefined;
+        let cardLast4: string | undefined;
+
+        try {
+          const paymentIntentId = session.payment_intent as string;
+          const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+          if (paymentIntent.payment_method) {
+            const paymentMethodId = typeof paymentIntent.payment_method === 'string'
+              ? paymentIntent.payment_method
+              : paymentIntent.payment_method.id;
+
+            const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
+
+            if (paymentMethod.card) {
+              cardBrand = paymentMethod.card.brand; // 'visa', 'mastercard', etc.
+              cardLast4 = paymentMethod.card.last4; // '4242'
+              console.log(`[Webhook] Card details: ${cardBrand} ****${cardLast4}`);
+            }
+          }
+        } catch (error) {
+          console.error('[Webhook] Error retrieving payment method details:', error);
+          // Continue without card details if retrieval fails
+        }
+
         // Create payment record
         const payment: PaymentInfo = {
           stripePaymentIntentId: session.payment_intent as string,
@@ -74,6 +100,8 @@ export async function POST(request: NextRequest) {
           paymentMethod: 'card',
           transactionNote: `Stripe payment - Session ${session.id}${processingFee > 0 ? ` (includes $${processingFee.toFixed(2)} processing fee)` : ''}`,
           paidAt: AdminTimestamp.now() as any,
+          cardBrand,
+          cardLast4,
         };
 
         // Calculate new totals

@@ -8,7 +8,6 @@ import { Proposal, ProposalStatus } from '@/types/invoice';
 import {
   getProposalById,
   markProposalAsViewed,
-  acceptProposal,
   rejectProposal,
 } from '@/services/invoice-service';
 import Card from '@/components/ui/Card';
@@ -74,7 +73,7 @@ export default function CustomerProposalDetailPage() {
   }, [params.id, user, loadProposal]);
 
   const handleAccept = async () => {
-    if (!proposal) return;
+    if (!proposal || !user?.email) return;
 
     const confirm = window.confirm(
       'Are you sure you want to accept this proposal? This action cannot be undone.'
@@ -83,12 +82,29 @@ export default function CustomerProposalDetailPage() {
 
     try {
       setProcessing(true);
-      await acceptProposal(proposal.id);
+
+      // Call server-side API to accept proposal
+      const response = await fetch('/api/proposals/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proposalId: proposal.id,
+          userEmail: user.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to accept proposal');
+      }
+
       await loadProposal(proposal.id);
-      alert('Proposal accepted successfully!');
+      alert(`Proposal ${data.proposalNumber} accepted successfully!`);
     } catch (error) {
       console.error('Error accepting proposal:', error);
-      alert('Failed to accept proposal');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to accept proposal';
+      alert(errorMessage);
     } finally {
       setProcessing(false);
     }

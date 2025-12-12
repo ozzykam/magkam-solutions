@@ -198,7 +198,10 @@ export default function PaymentHistoryPage() {
                               <div>
                                 <span className="text-gray-500">Method:</span>
                                 <span className="ml-2 font-medium text-gray-900">
-                                  {item.payment.paymentMethod}
+                                  {item.payment.paymentMethod}w
+                                  {item.payment.cardBrand && item.payment.cardLast4 && (
+                                    <> ({item.payment.cardBrand.charAt(0).toUpperCase() + item.payment.cardBrand.slice(1)} ••••{item.payment.cardLast4})</>
+                                  )}
                                 </span>
                               </div>
                               {item.payment.stripeChargeId && (

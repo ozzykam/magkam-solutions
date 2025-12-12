@@ -29,6 +29,13 @@ async function getAuthenticatedUserId(): Promise<string | null> {
 }
 
 /**
+ * Get the authenticated user's ID (exported version)
+ */
+export async function getAuthUserId(): Promise<string | null> {
+  return getAuthenticatedUserId();
+}
+
+/**
  * Check if user is authenticated (server-side)
  */
 export async function isAuthenticated(): Promise<boolean> {

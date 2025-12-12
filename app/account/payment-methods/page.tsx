@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/lib/contexts/AuthContext';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { CreditCardIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
-// TODO: This will be integrated with Stripe later
 interface PaymentMethod {
   id: string;
   type: 'card';
@@ -17,20 +18,37 @@ interface PaymentMethod {
 }
 
 export default function PaymentMethodsPage() {
-  // Placeholder data - will be replaced with Stripe integration
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
-    {
-      id: '1',
-      type: 'card',
-      brand: 'Visa',
-      last4: '4242',
-      expMonth: 12,
-      expYear: 2025,
-      isDefault: true,
-    },
-  ]);
-
+  const { user } = useAuth();
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddCard, setShowAddCard] = useState(false);
+
+  // Load payment methods from Stripe
+  const loadPaymentMethods = useCallback(async () => {
+    if (!user?.email) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/stripe/payment-methods?email=${encodeURIComponent(user.email)}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setPaymentMethods(data.paymentMethods || []);
+      } else {
+        console.error('Error loading payment methods:', data.error);
+      }
+    } catch (error) {
+      console.error('Error loading payment methods:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (user?.email) {
+      loadPaymentMethods();
+    }
+  }, [user?.email, loadPaymentMethods]);
 
   const getBrandIcon = (brand: string) => {
     const iconClass = "w-8 h-8";
@@ -65,10 +83,25 @@ export default function PaymentMethodsPage() {
     setShowAddCard(false);
   };
 
-  const handleRemovePaymentMethod = (id: string) => {
+  const handleRemovePaymentMethod = async (id: string) => {
     const confirm = window.confirm('Are you sure you want to remove this payment method?');
-    if (confirm) {
-      setPaymentMethods(paymentMethods.filter((pm) => pm.id !== id));
+    if (!confirm) return;
+
+    try {
+      const response = await fetch(`/api/stripe/payment-methods?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove from local state
+        setPaymentMethods(paymentMethods.filter((pm) => pm.id !== id));
+      } else {
+        const data = await response.json();
+        alert(`Failed to remove payment method: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error removing payment method:', error);
+      alert('Failed to remove payment method. Please try again.');
     }
   };
 
@@ -80,6 +113,14 @@ export default function PaymentMethodsPage() {
       }))
     );
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl space-y-6">

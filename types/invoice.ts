@@ -48,6 +48,9 @@ export interface PaymentInfo {
   paidAt: Timestamp;
   paymentMethod?: 'card' | 'ach' | 'bank_transfer' | 'check' | 'cash' | 'wire' | 'other';
   transactionNote?: string;
+  // Card details (when paid by card)
+  cardBrand?: string; // e.g., 'visa', 'mastercard', 'amex'
+  cardLast4?: string; // Last 4 digits, e.g., '4242'
 }
 
 /**
