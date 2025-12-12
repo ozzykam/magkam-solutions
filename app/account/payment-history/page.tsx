@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { Invoice, PaymentInfo } from '@/types/invoice';
@@ -23,13 +23,7 @@ export default function PaymentHistoryPage() {
   const [payments, setPayments] = useState<PaymentWithInvoice[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.email) {
-      loadPaymentHistory();
-    }
-  }, [user]);
-
-  const loadPaymentHistory = async () => {
+  const loadPaymentHistory = useCallback(async () => {
     if (!user?.email) return;
 
     try {
@@ -66,7 +60,13 @@ export default function PaymentHistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (user?.email) {
+      loadPaymentHistory();
+    }
+  }, [user, loadPaymentHistory]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -149,7 +149,7 @@ export default function PaymentHistoryPage() {
           <CreditCardIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No payment history</h3>
           <p className="text-gray-600">
-            You haven't made any payments yet
+            You haven&apos;t made any payments yet
           </p>
         </Card>
       ) : (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Invoice, InvoiceStatus, LineItem, ClientInfo, TaxConfig } from '@/types/invoice';
 import { getInvoiceById, updateInvoice } from '@/services/invoice-service';
@@ -69,13 +69,7 @@ export default function EditInvoicePage() {
   const [terms, setTerms] = useState('');
   const [notes, setNotes] = useState('');
 
-  useEffect(() => {
-    if (params.id) {
-      loadInvoice(params.id as string);
-    }
-  }, [params.id]);
-
-  const loadInvoice = async (id: string) => {
+  const loadInvoice = useCallback(async (id: string) => {
     try {
       setLoading(true);
       const data = await getInvoiceById(id);
@@ -127,7 +121,13 @@ export default function EditInvoicePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    if (params.id) {
+      loadInvoice(params.id as string);
+    }
+  }, [params.id, loadInvoice]);
 
   const addLineItem = () => {
     setLineItems([

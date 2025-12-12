@@ -204,3 +204,37 @@ export async function sendAdminOrderNotificationEmail(
 
   return sendEmail({ to, subject, html });
 }
+
+/**
+ * Send admin notification email when a proposal is approved
+ */
+export async function sendProposalApprovedEmail(
+  to: string,
+  proposalData: {
+    proposalNumber: string;
+    customerName: string;
+    customerEmail: string;
+    customerCompany?: string;
+    lineItems: Array<{
+      description: string;
+      quantity: number;
+      rate: number;
+      amount: number;
+    }>;
+    subtotal: number;
+    taxAmount: number;
+    discountAmount: number;
+    total: number;
+    taxLabel?: string;
+    discountReason?: string;
+    proposalTitle?: string;
+    acceptedAt: string;
+  }
+): Promise<boolean> {
+  const { generateProposalApprovedEmail } = await import('./templates/proposal-approved');
+
+  const html = generateProposalApprovedEmail(proposalData);
+  const subject = `✅ Proposal Approved - ${proposalData.proposalNumber}`;
+
+  return sendEmail({ to, subject, html });
+}

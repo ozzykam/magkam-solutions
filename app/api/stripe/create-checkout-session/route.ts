@@ -2,9 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
 import { getAdminFirestore } from '@/lib/firebase/admin';
 import { Invoice } from '@/types/invoice';
+import {
+  paymentRateLimiter,
+  getClientIdentifier,
+  checkRateLimit,
+  getRateLimitHeaders,
+} from '@/lib/utils/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check rate limit
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkRateLimit(paymentRateLimiter, identifier);
+    const rateLimitHeaders = getRateLimitHeaders(rateLimitResult);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        {
+          status: 429,
+          headers: rateLimitHeaders,
+        }
+      );
+    }
+
     const { invoiceId, userEmail, amount, processingFee } = await request.json();
 
     console.log('[Stripe Checkout] Request received:', {
@@ -94,6 +115,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Generate idempotency key to prevent duplicate checkout sessions
+    // Using invoiceId and amount ensures retry safety for the same invoice payment
+    const idempotencyKey = `checkout_${invoiceId}_${Math.round(amount * 100)}`;
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -110,9 +135,14 @@ export async function POST(request: NextRequest) {
       },
       success_url: `${request.headers.get('origin')}/account/invoices/${invoiceId}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${request.headers.get('origin')}/account/invoices/${invoiceId}?payment=cancelled`,
+    }, {
+      idempotencyKey,
     });
 
-    return NextResponse.json({ sessionId: session.id, url: session.url });
+    return NextResponse.json(
+      { sessionId: session.id, url: session.url },
+      { headers: rateLimitHeaders }
+    );
   } catch (error: any) {
     console.error('Error creating checkout session:', error);
     return NextResponse.json(

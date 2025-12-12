@@ -119,6 +119,62 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.error('PaymentIntent failed:', paymentIntent.id);
+
+        // If this payment was for an invoice, we might want to update its status
+        const invoiceId = paymentIntent.metadata?.invoiceId;
+        if (invoiceId) {
+          console.log(`Payment failed for invoice ${invoiceId}. Manual intervention may be required.`);
+          // Optionally: update invoice status or send notification
+        }
+        break;
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge;
+        console.log('Charge refunded:', charge.id);
+
+        // Get the payment intent from the charge
+        const paymentIntentId = charge.payment_intent as string;
+
+        // Find invoices with this payment intent
+        const firestore = getAdminFirestore();
+        const invoicesSnapshot = await firestore
+          .collection('invoices')
+          .get();
+
+        for (const invoiceDoc of invoicesSnapshot.docs) {
+          const invoice = invoiceDoc.data();
+          const hasPayment = invoice.payments?.some(
+            (p: any) => p.stripePaymentIntentId === paymentIntentId
+          );
+
+          if (hasPayment) {
+            console.log(`Refund detected for invoice ${invoiceDoc.id}, payment intent ${paymentIntentId}`);
+            // Note: Refund handling should be done through the refund service
+            // This is just for logging/notification purposes
+          }
+        }
+        break;
+      }
+
+      case 'charge.failed': {
+        const charge = event.data.object as Stripe.Charge;
+        console.error('Charge failed:', charge.id);
+        console.error('Failure message:', charge.failure_message);
+
+        // Log for admin review
+        const metadata = charge.metadata;
+        if (metadata?.invoiceId) {
+          console.error(`Charge failed for invoice ${metadata.invoiceId}: ${charge.failure_message}`);
+        }
+        break;
+      }
+
+      case 'charge.dispute.created': {
+        const dispute = event.data.object as Stripe.Dispute;
+        console.warn('Dispute created:', dispute.id);
+        console.warn('Dispute reason:', dispute.reason);
+        // Admins should be notified about disputes for manual handling
         break;
       }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
@@ -20,13 +20,7 @@ export default function PaymentSuccessPage() {
   const [loading, setLoading] = useState(true);
   const sessionId = searchParams.get('session_id');
 
-  useEffect(() => {
-    if (params.id && user?.email) {
-      loadInvoice(params.id as string);
-    }
-  }, [params.id, user]);
-
-  const loadInvoice = async (id: string) => {
+  const loadInvoice = useCallback(async (id: string) => {
     try {
       setLoading(true);
       const data = await getInvoiceById(id);
@@ -44,7 +38,13 @@ export default function PaymentSuccessPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router, user]);
+
+  useEffect(() => {
+    if (params.id && user?.email) {
+      loadInvoice(params.id as string);
+    }
+  }, [params.id, loadInvoice, user?.email]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

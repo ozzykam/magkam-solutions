@@ -262,10 +262,60 @@ export const markProposalAsViewed = async (id: string): Promise<void> => {
  * Accept a proposal
  */
 export const acceptProposal = async (id: string): Promise<void> => {
+  const now = Timestamp.now();
+
+  // Update proposal status
   await updateProposal(id, {
     status: ProposalStatus.ACCEPTED,
-    respondedAt: Timestamp.now(),
+    respondedAt: now,
   });
+
+  // Send email notification to admin
+  try {
+    // Get full proposal data
+    const proposal = await getProposalById(id);
+
+    if (proposal) {
+      // Get admin email from business settings
+      const { getStoreSettings } = await import('./business-info-service');
+      const settings = await getStoreSettings();
+      const adminEmail = settings.adminNotificationEmail || settings.email;
+
+      if (adminEmail) {
+        // Send email notification
+        const { sendProposalApprovedEmail } = await import('@/lib/email/email-service');
+
+        await sendProposalApprovedEmail(adminEmail, {
+          proposalNumber: proposal.proposalNumber,
+          customerName: proposal.client.name,
+          customerEmail: proposal.client.email,
+          customerCompany: proposal.client.company,
+          lineItems: proposal.lineItems,
+          subtotal: proposal.subtotal,
+          taxAmount: proposal.taxAmount,
+          discountAmount: proposal.discountAmount,
+          total: proposal.total,
+          taxLabel: proposal.taxConfig?.taxLabel,
+          discountReason: proposal.discount?.reason,
+          proposalTitle: proposal.title,
+          acceptedAt: now.toDate().toLocaleString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          }),
+        });
+
+        console.log(`Proposal approval notification sent to ${adminEmail}`);
+      } else {
+        console.warn('No admin email configured for proposal notifications');
+      }
+    }
+  } catch (emailError) {
+    // Don't fail the proposal acceptance if email fails
+    console.error('Failed to send proposal approval email:', emailError);
+  }
 };
 
 /**

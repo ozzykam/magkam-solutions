@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
@@ -20,7 +20,6 @@ import {
   CreditCardIcon,
   ExclamationTriangleIcon,
   ArrowLeftIcon,
-  BanknotesIcon,
 } from '@heroicons/react/24/solid';
 
 const STATUS_COLORS: Record<InvoiceStatus, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
@@ -41,13 +40,7 @@ export default function CustomerInvoiceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    if (params.id && user?.email) {
-      loadInvoice(params.id as string);
-    }
-  }, [params.id, user]);
-
-  const loadInvoice = async (id: string) => {
+  const loadInvoice = useCallback(async (id: string) => {
     try {
       setLoading(true);
       const data = await getInvoiceById(id);
@@ -72,7 +65,13 @@ export default function CustomerInvoiceDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router, user]);
+
+  useEffect(() => {
+    if (params.id && user?.email) {
+      loadInvoice(params.id as string);
+    }
+  }, [params.id, loadInvoice, user?.email]);
 
   const handlePayNow = async () => {
     if (!invoice || !user?.email) return;
@@ -109,9 +108,10 @@ export default function CustomerInvoiceDetailPage() {
       if (data.url) {
         window.location.href = data.url;
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error initiating payment:', error);
-      alert(error.message || 'Failed to initiate payment. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to initiate payment. Please try again.';
+      alert(errorMessage);
       setProcessing(false);
     }
   };

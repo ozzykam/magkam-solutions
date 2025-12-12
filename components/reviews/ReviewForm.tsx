@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
 import { Review } from '@/types/review';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { checkVerifiedPurchase } from '@/services/review-service';
 
 interface ReviewFormProps {
   serviceId: string;
@@ -27,6 +28,19 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
   const [comment, setComment] = useState(existingReview?.comment || '');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isVerifiedPurchase, setIsVerifiedPurchase] = useState(false);
+
+  // Check if user has purchased this service
+  useEffect(() => {
+    const verifyPurchase = async () => {
+      if (user?.uid && serviceId) {
+        const verified = await checkVerifiedPurchase(user.uid, serviceId);
+        setIsVerifiedPurchase(verified);
+      }
+    };
+
+    verifyPurchase();
+  }, [user?.uid, serviceId]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -62,7 +76,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
         rating,
         title: title.trim() || undefined,
         comment: comment.trim(),
-        verified: false, // TODO: Check if user purchased service
+        verified: isVerifiedPurchase, // Verified if user purchased service
       };
 
       await onSubmit(reviewData);

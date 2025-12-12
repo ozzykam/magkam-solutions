@@ -6,40 +6,33 @@ rules_version = '2';
         return request.auth != null;
       }
 
-      // Product images
+      // Product images - Admin only (use server-side admin SDK for write operations)
       match /products/{imageId} {
         allow read: if true;
-        allow write: if isSignedIn() &&
-                       request.resource.size < 5 * 1024 * 1024 &&     
-                       
-  request.resource.contentType.matches('image/.*');
+        // Write access should be done server-side with Admin SDK
+        // Client-side uploads to products are not allowed for security
+        allow write: if false;
       }
 
-      // Category images
+      // Category images - Admin only (use server-side admin SDK for write operations)
       match /categories/{imageId} {
         allow read: if true;
-        allow write: if isSignedIn() &&
-                       request.resource.size < 3 * 1024 * 1024 &&     
-                       
-  request.resource.contentType.matches('image/.*');
+        // Write access should be done server-side with Admin SDK
+        allow write: if false;
       }
 
-      // Tag images
+      // Tag images - Admin only (use server-side admin SDK for write operations)
       match /tags/{imageId} {
         allow read: if true;
-        allow write: if isSignedIn() &&
-                       request.resource.size < 2 * 1024 * 1024 &&     
-                       
-  request.resource.contentType.matches('image/.*');
+        // Write access should be done server-side with Admin SDK
+        allow write: if false;
       }
 
-      // Vendor images
+      // Vendor images - Admin only (use server-side admin SDK for write operations)
       match /vendors/{imageId} {
         allow read: if true;
-        allow write: if isSignedIn() &&
-                       request.resource.size < 3 * 1024 * 1024 &&     
-                       
-  request.resource.contentType.matches('image/.*');
+        // Write access should be done server-side with Admin SDK
+        allow write: if false;
       }
 
       // User avatars
@@ -62,43 +55,47 @@ rules_version = '2';
   request.resource.contentType.matches('image/.*');
       }
 
-      // Content images (blog posts, recipes, etc.)
+      // Content images (blog posts, recipes, etc.) - Admin only
       match /content/{imageId} {
         allow read: if true;
-        allow write: if isSignedIn() &&
-                       request.resource.size < 5 * 1024 * 1024 &&
-                       request.resource.contentType.matches('image/.*');
+        // Write access should be done server-side with Admin SDK
+        allow write: if false;
       }
 
-      // SEO images (Open Graph images, etc.)
+      // SEO images (Open Graph images, etc.) - Admin only
       match /seo/{imageId} {
         allow read: if true;
-        allow write: if isSignedIn() &&
-                       request.resource.size < 5 * 1024 * 1024 &&
-                       request.resource.contentType.matches('image/.*');
+        // Write access should be done server-side with Admin SDK
+        allow write: if false;
       }
 
-      // Uploads folder
-      match /uploads/{allPaths=**} {
+      // User-specific uploads folder (properly scoped to user)
+      match /uploads/users/{userId}/{allPaths=**} {
         allow read: if true;
         allow write: if isSignedIn() &&
+                       request.auth.uid == userId &&
                        request.resource.size < 10 * 1024 * 1024;
       }
 
-      // Branding folder (logos, favicons)
-      match /branding/{folder}/{imageId} {
+      // Admin uploads folder (for admin-uploaded content)
+      match /uploads/admin/{allPaths=**} {
         allow read: if true;
-        allow write: if isSignedIn() &&
-                       request.resource.size < 5 * 1024 * 1024 &&
-                       request.resource.contentType.matches('image/.*');
+        // Write access should be done server-side with Admin SDK
+        allow write: if false;
       }
 
-      // Services images
+      // Branding folder (logos, favicons) - Admin only
+      match /branding/{folder}/{imageId} {
+        allow read: if true;
+        // Write access should be done server-side with Admin SDK
+        allow write: if false;
+      }
+
+      // Services images - Admin only
       match /services/{imageId} {
         allow read: if true;
-        allow write: if isSignedIn() &&
-                       request.resource.size < 5 * 1024 * 1024 &&
-                       request.resource.contentType.matches('image/.*');
+        // Write access should be done server-side with Admin SDK
+        allow write: if false;
       }
 
       // Default deny

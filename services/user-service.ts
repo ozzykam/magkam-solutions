@@ -161,14 +161,25 @@ export const updateUser = async (
 
 /**
  * Delete user (admin only)
- * Note: This only deletes the Firestore document
- * Deleting Firebase Auth user requires Firebase Admin SDK
+ * Deletes from both Firestore and Firebase Auth via API endpoint
  */
 export const deleteUser = async (uid: string): Promise<void> => {
   try {
-    const docRef = doc(db, USERS_COLLECTION, uid);
-    await deleteDoc(docRef);
-    // TODO: Also delete from Firebase Auth using Admin SDK
+    // Call the API endpoint to delete from both Firestore and Auth
+    const response = await fetch('/api/users/delete', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId: uid }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete user');
+    }
+
+    console.log(`Successfully deleted user ${uid}`);
   } catch (error) {
     console.error('Error deleting user:', error);
     throw error;

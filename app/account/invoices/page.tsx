@@ -131,7 +131,7 @@ export default function CustomerInvoicesPage() {
         <Card className="p-12 text-center">
           <div className="text-gray-400 mb-2">No invoices found</div>
           <p className="text-sm text-gray-500">
-            You don't have any invoices yet
+            You don&apos;t have any invoices yet
           </p>
         </Card>
       ) : (

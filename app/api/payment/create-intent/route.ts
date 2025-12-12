@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import {
+  paymentRateLimiter,
+  getClientIdentifier,
+  checkRateLimit,
+  getRateLimitHeaders,
+} from '@/lib/utils/rate-limit';
 
 // Initialize Stripe lazily to avoid build-time errors
 function getStripe(): Stripe {
@@ -16,6 +22,21 @@ function getStripe(): Stripe {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check rate limit
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkRateLimit(paymentRateLimiter, identifier);
+    const rateLimitHeaders = getRateLimitHeaders(rateLimitResult);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        {
+          status: 429,
+          headers: rateLimitHeaders,
+        }
+      );
+    }
+
     const body = await request.json();
     const { amount, orderId, customerEmail, customerName } = body;
 
@@ -38,6 +59,10 @@ export async function POST(request: NextRequest) {
     // Get Stripe instance
     const stripe = getStripe();
 
+    // Generate idempotency key to prevent duplicate charges
+    // Using orderId ensures retry safety for the same order
+    const idempotencyKey = `payment_intent_${orderId}_${Math.round(amount)}`;
+
     // Create a PaymentIntent with the order amount and currency
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount), // Amount in cents
@@ -52,12 +77,17 @@ export async function POST(request: NextRequest) {
       },
       description: `Order #${orderId}`,
       receipt_email: customerEmail,
+    }, {
+      idempotencyKey,
     });
 
-    return NextResponse.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-    });
+    return NextResponse.json(
+      {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+      },
+      { headers: rateLimitHeaders }
+    );
   } catch (error) {
     console.error('Error creating payment intent:', error);
     return NextResponse.json(

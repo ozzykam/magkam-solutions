@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { Proposal, ProposalStatus } from '@/types/invoice';
@@ -26,13 +26,7 @@ export default function CustomerProposalsPage() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.email) {
-      loadProposals();
-    }
-  }, [user]);
-
-  const loadProposals = async () => {
+  const loadProposals = useCallback(async () => {
     if (!user?.email) return;
 
     try {
@@ -44,7 +38,13 @@ export default function CustomerProposalsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user?.email) {
+      loadProposals();
+    }
+  }, [user, loadProposals]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -132,7 +132,7 @@ export default function CustomerProposalsPage() {
         <Card className="p-12 text-center">
           <div className="text-gray-400 mb-2">No proposals found</div>
           <p className="text-sm text-gray-500">
-            You don't have any proposals yet
+            You don&apos;t have any proposals yet
           </p>
         </Card>
       ) : (

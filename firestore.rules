@@ -25,8 +25,9 @@ service cloud.firestore {
 
     // Users collection
     match /users/{userId} {
-      // Anyone can read user profiles (for displaying names, etc.)
-      allow read: if true;
+      // Authenticated users can read profiles (for displaying names on reviews, etc.)
+      // Consider creating a separate publicProfile subcollection for truly public data
+      allow read: if isSignedIn();
 
       // Users can create their own profile during registration
       allow create: if isSignedIn() && request.auth.uid == userId;
@@ -196,8 +197,8 @@ service cloud.firestore {
 
     // Wishlists collection
     match /wishlists/{userId} {
-      // Users can only read their own wishlist
-      allow read: if isOwner(userId);
+      // Users can read their own wishlist, admins can read all
+      allow read: if isOwner(userId) || isAdmin();
 
       // Users can create their own wishlist
       allow create: if isSignedIn() && request.auth.uid == userId;
@@ -207,9 +208,6 @@ service cloud.firestore {
 
       // Users can delete their own wishlist
       allow delete: if isOwner(userId);
-
-      // Admins can read all wishlists (for analytics)
-      allow read: if isAdmin();
     }
 
     // Content Posts collection (Blog, Recipes, Style Guides, etc.)

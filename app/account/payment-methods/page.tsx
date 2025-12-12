@@ -33,7 +33,30 @@ export default function PaymentMethodsPage() {
   const [showAddCard, setShowAddCard] = useState(false);
 
   const getBrandIcon = (brand: string) => {
-    return <CreditCardIcon className="w-8 h-8 text-gray-600" />;
+    const iconClass = "w-8 h-8";
+
+    // Return different colors based on card brand
+    switch (brand.toLowerCase()) {
+      case 'visa':
+        return <CreditCardIcon className={`${iconClass} text-blue-600`} />;
+      case 'mastercard':
+        return <CreditCardIcon className={`${iconClass} text-red-600`} />;
+      case 'amex':
+      case 'american express':
+        return <CreditCardIcon className={`${iconClass} text-blue-800`} />;
+      case 'discover':
+        return <CreditCardIcon className={`${iconClass} text-orange-600`} />;
+      case 'diners':
+      case 'diners club':
+        return <CreditCardIcon className={`${iconClass} text-blue-500`} />;
+      case 'jcb':
+        return <CreditCardIcon className={`${iconClass} text-green-600`} />;
+      case 'unionpay':
+      case 'union pay':
+        return <CreditCardIcon className={`${iconClass} text-red-700`} />;
+      default:
+        return <CreditCardIcon className={`${iconClass} text-gray-600`} />;
+    }
   };
 
   const handleAddPaymentMethod = () => {

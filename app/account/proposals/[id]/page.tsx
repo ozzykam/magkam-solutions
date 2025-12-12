@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
@@ -40,13 +40,7 @@ export default function CustomerProposalDetailPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    if (params.id && user?.email) {
-      loadProposal(params.id as string);
-    }
-  }, [params.id, user]);
-
-  const loadProposal = async (id: string) => {
+  const loadProposal = useCallback(async (id: string) => {
     try {
       setLoading(true);
       const data = await getProposalById(id);
@@ -71,7 +65,13 @@ export default function CustomerProposalDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router, user]);
+
+  useEffect(() => {
+    if (params.id && user?.email) {
+      loadProposal(params.id as string);
+    }
+  }, [params.id, user, loadProposal]);
 
   const handleAccept = async () => {
     if (!proposal) return;

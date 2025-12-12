@@ -41,7 +41,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const idToken = await firebaseUser.getIdToken();
           // Set cookie with 1 hour expiration (token refresh will update it)
-          document.cookie = `auth-token=${idToken}; path=/; max-age=3600; SameSite=Lax`;
+          // Add Secure flag in production or when using HTTPS
+          const isSecure = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
+          const secureFlag = isSecure ? '; Secure' : '';
+          document.cookie = `auth-token=${idToken}; path=/; max-age=3600; SameSite=Strict${secureFlag}`;
         } catch (error) {
           console.error('Error storing auth token:', error);
         }
