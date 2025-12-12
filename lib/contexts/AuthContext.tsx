@@ -29,6 +29,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Function to update auth token cookie
+    const updateAuthTokenCookie = async (firebaseUser: FirebaseUser) => {
+      try {
+        // Force refresh to get a new token
+        const idToken = await firebaseUser.getIdToken(true);
+        // Set cookie with 1 hour expiration
+        // Add Secure flag in production or when using HTTPS
+        const isSecure = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
+        const secureFlag = isSecure ? '; Secure' : '';
+        document.cookie = `auth-token=${idToken}; path=/; max-age=3600; SameSite=Strict${secureFlag}`;
+        console.log('[AuthContext] Auth token refreshed and stored in cookie');
+      } catch (error) {
+        console.error('Error updating auth token:', error);
+      }
+    };
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
 
@@ -37,17 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userData = await getCurrentUser(firebaseUser);
         setUser(userData);
 
-        // Store auth token in cookie for server-side verification
-        try {
-          const idToken = await firebaseUser.getIdToken();
-          // Set cookie with 1 hour expiration (token refresh will update it)
-          // Add Secure flag in production or when using HTTPS
-          const isSecure = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
-          const secureFlag = isSecure ? '; Secure' : '';
-          document.cookie = `auth-token=${idToken}; path=/; max-age=3600; SameSite=Strict${secureFlag}`;
-        } catch (error) {
-          console.error('Error storing auth token:', error);
-        }
+        // Store initial auth token
+        await updateAuthTokenCookie(firebaseUser);
       } else {
         setUser(null);
         // Clear auth token cookie on logout
@@ -59,6 +66,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => unsubscribe();
   }, []);
+
+  // Auto-refresh token every 50 minutes (before 1 hour expiration)
+  useEffect(() => {
+    if (!firebaseUser) return;
+
+    const refreshInterval = setInterval(async () => {
+      console.log('[AuthContext] Auto-refreshing auth token...');
+      try {
+        const idToken = await firebaseUser.getIdToken(true);
+        const isSecure = window.location.protocol === 'https:' || process.env.NODE_ENV === 'production';
+        const secureFlag = isSecure ? '; Secure' : '';
+        document.cookie = `auth-token=${idToken}; path=/; max-age=3600; SameSite=Strict${secureFlag}`;
+        console.log('[AuthContext] Auth token refreshed successfully');
+      } catch (error) {
+        console.error('[AuthContext] Error refreshing auth token:', error);
+      }
+    }, 50 * 60 * 1000); // 50 minutes
+
+    return () => clearInterval(refreshInterval);
+  }, [firebaseUser]);
 
   const value: AuthContextType = {
     user,
