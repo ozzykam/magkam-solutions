@@ -198,26 +198,17 @@ export default function PaymentHistoryPage() {
                               <div>
                                 <span className="text-gray-500">Method:</span>
                                 <span className="ml-2 font-medium text-gray-900">
-                                  {item.payment.paymentMethod}w
+                                  {
+                                    item.payment.paymentMethod
+                                    ? item.payment.paymentMethod.charAt(0).toLocaleUpperCase() + item.payment.paymentMethod.slice(1)
+                                    : 'N/A'
+                                  }<br/>
                                   {item.payment.cardBrand && item.payment.cardLast4 && (
                                     <> ({item.payment.cardBrand.charAt(0).toUpperCase() + item.payment.cardBrand.slice(1)} ••••{item.payment.cardLast4})</>
                                   )}
                                 </span>
                               </div>
-                              {item.payment.stripeChargeId && (
-                                <div>
-                                  <span className="text-gray-500">Transaction ID:</span>
-                                  <span className="ml-2 font-medium text-gray-900 font-mono text-xs">
-                                    {item.payment.stripeChargeId}
-                                  </span>
-                                </div>
-                              )}
                             </div>
-                            {item.payment.transactionNote && (
-                              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                                <p className="text-sm text-gray-700">{item.payment.transactionNote}</p>
-                              </div>
-                            )}
                             <div className="mt-3">
                               <Link href={`/account/invoices/${item.invoice.id}`}>
                                 <button className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium">
