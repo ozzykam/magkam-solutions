@@ -20,6 +20,7 @@ import {
   CreditCardIcon,
   ExclamationTriangleIcon,
   ArrowLeftIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/solid';
 
 const STATUS_COLORS: Record<InvoiceStatus, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
@@ -197,12 +198,21 @@ export default function CustomerInvoiceDetailPage() {
           </div>
           {invoice.title && <p className="text-lg text-gray-600">{invoice.title}</p>}
         </div>
-        {canPay && (
-          <Button variant="primary" onClick={handlePayNow} loading={processing}>
-            <CreditCardIcon className="w-4 h-4 mr-1" />
-            Pay Now
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => window.open(`/api/invoices/${invoice.id}/print`, '_blank')}
+          >
+            <ArrowDownTrayIcon className="w-4 h-4 mr-1" />
+            Download Invoice
           </Button>
-        )}
+          {canPay && (
+            <Button variant="primary" onClick={handlePayNow} loading={processing}>
+              <CreditCardIcon className="w-4 h-4 mr-1" />
+              Pay Now
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Payment Status */}

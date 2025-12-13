@@ -240,7 +240,7 @@ export async function sendProposalApprovedEmail(
 }
 
 /**
- * Send payment received notification email
+ * Send payment received notification email (to admin)
  */
 export async function sendPaymentReceivedEmail(
   to: string,
@@ -267,6 +267,47 @@ export async function sendPaymentReceivedEmail(
   const subject = isPaidInFull
     ? `💰 Payment Received - ${paymentData.invoiceNumber} (Paid in Full)`
     : `💰 Payment Received - ${paymentData.invoiceNumber}`;
+
+  return sendEmail({ to, subject, html });
+}
+
+/**
+ * Send payment confirmation email (to customer)
+ */
+export async function sendCustomerPaymentConfirmation(
+  to: string,
+  confirmationData: {
+    invoiceNumber: string;
+    customerName: string;
+    paymentAmount: number;
+    remainingBalance: number;
+    totalAmount: number;
+    paymentMethod: string;
+    cardBrand?: string;
+    cardLast4?: string;
+    paidAt: string;
+    invoiceTitle?: string;
+    processingFee?: number;
+    lineItems: Array<{
+      description: string;
+      quantity: number;
+      rate: number;
+      amount: number;
+    }>;
+    subtotal: number;
+    taxAmount: number;
+    discountAmount: number;
+    taxLabel?: string;
+    discountReason?: string;
+  }
+): Promise<boolean> {
+  const { generatePaymentConfirmationEmail } = await import('./templates/payment-confirmation');
+
+  const html = generatePaymentConfirmationEmail(confirmationData);
+  const isPaidInFull = confirmationData.remainingBalance <= 0;
+  const subject = isPaidInFull
+    ? `Payment Confirmation - ${confirmationData.invoiceNumber} (Paid in Full)`
+    : `Payment Confirmation - ${confirmationData.invoiceNumber}`;
 
   return sendEmail({ to, subject, html });
 }

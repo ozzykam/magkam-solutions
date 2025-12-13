@@ -136,16 +136,25 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Webhook] Payment recorded for invoice ${invoiceId}: $${invoiceAmount} (processing fee: $${processingFee})`);
 
-        // Send payment notification email to admin
+        // Send payment notification emails
         try {
           const { getStoreSettings } = await import('@/services/business-info-service');
-          const { sendPaymentReceivedEmail } = await import('@/lib/email/email-service');
+          const { sendPaymentReceivedEmail, sendCustomerPaymentConfirmation } = await import('@/lib/email/email-service');
 
           const settings = await getStoreSettings();
           const adminEmail = settings.adminNotificationEmail || settings.email;
 
+          const paidAtFormatted = new Date().toLocaleString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          });
+
+          // Send admin notification
           if (adminEmail) {
-            const emailData = {
+            const adminEmailData = {
               invoiceNumber: invoice.invoiceNumber,
               customerName: invoice.client.name,
               customerEmail: invoice.client.email,
@@ -156,25 +165,43 @@ export async function POST(request: NextRequest) {
               paymentMethod: 'card',
               cardBrand,
               cardLast4,
-              paidAt: new Date().toLocaleString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-              }),
+              paidAt: paidAtFormatted,
               invoiceTitle: invoice.title,
               processingFee: processingFee > 0 ? processingFee : undefined,
             };
 
-            const emailSent = await sendPaymentReceivedEmail(adminEmail, emailData);
-            console.log(`[Webhook] Payment notification email ${emailSent ? 'sent' : 'failed'} to ${adminEmail}`);
+            const adminEmailSent = await sendPaymentReceivedEmail(adminEmail, adminEmailData);
+            console.log(`[Webhook] Admin notification email ${adminEmailSent ? 'sent' : 'failed'} to ${adminEmail}`);
           } else {
             console.warn('[Webhook] No admin email configured for payment notifications');
           }
+
+          // Send customer confirmation
+          const customerEmailData = {
+            invoiceNumber: invoice.invoiceNumber,
+            customerName: invoice.client.name,
+            paymentAmount: invoiceAmount,
+            remainingBalance: amountDue,
+            totalAmount: invoice.total,
+            paymentMethod: 'card',
+            cardBrand,
+            cardLast4,
+            paidAt: paidAtFormatted,
+            invoiceTitle: invoice.title,
+            processingFee: processingFee > 0 ? processingFee : undefined,
+            lineItems: invoice.lineItems,
+            subtotal: invoice.subtotal,
+            taxAmount: invoice.taxAmount,
+            discountAmount: invoice.discountAmount,
+            taxLabel: invoice.taxConfig?.taxLabel,
+            discountReason: invoice.discount?.reason,
+          };
+
+          const customerEmailSent = await sendCustomerPaymentConfirmation(invoice.client.email, customerEmailData);
+          console.log(`[Webhook] Customer confirmation email ${customerEmailSent ? 'sent' : 'failed'} to ${invoice.client.email}`);
         } catch (emailError) {
           // Don't fail the webhook if email fails
-          console.error('[Webhook] Error sending payment notification email:', emailError);
+          console.error('[Webhook] Error sending payment emails:', emailError);
         }
 
         break;
