@@ -344,14 +344,12 @@ export default function CustomerInvoiceDetailPage() {
                           {formatCurrency(payment.amount)}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {formatDate(payment.paidAt)} • {payment.paymentMethod}
+                          {formatDate(payment.paidAt)}
+                          <br/>
                           {payment.cardBrand && payment.cardLast4 && (
-                            <> • {payment.cardBrand.charAt(0).toUpperCase() + payment.cardBrand.slice(1)} ••••{payment.cardLast4}</>
+                            <>{payment.cardBrand.charAt(0).toUpperCase() + payment.cardBrand.slice(1)} ••••{payment.cardLast4}</>
                           )}
                         </p>
-                        {payment.transactionNote && (
-                          <p className="text-sm text-gray-600 mt-1">{payment.transactionNote}</p>
-                        )}
                       </div>
                     </div>
                   </div>
