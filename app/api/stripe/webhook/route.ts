@@ -135,6 +135,48 @@ export async function POST(request: NextRequest) {
         await invoiceRef.update(updates);
 
         console.log(`[Webhook] Payment recorded for invoice ${invoiceId}: $${invoiceAmount} (processing fee: $${processingFee})`);
+
+        // Send payment notification email to admin
+        try {
+          const { getStoreSettings } = await import('@/services/business-info-service');
+          const { sendPaymentReceivedEmail } = await import('@/lib/email/email-service');
+
+          const settings = await getStoreSettings();
+          const adminEmail = settings.adminNotificationEmail || settings.email;
+
+          if (adminEmail) {
+            const emailData = {
+              invoiceNumber: invoice.invoiceNumber,
+              customerName: invoice.client.name,
+              customerEmail: invoice.client.email,
+              customerCompany: invoice.client.company,
+              paymentAmount: invoiceAmount,
+              remainingBalance: amountDue,
+              totalAmount: invoice.total,
+              paymentMethod: 'card',
+              cardBrand,
+              cardLast4,
+              paidAt: new Date().toLocaleString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              }),
+              invoiceTitle: invoice.title,
+              processingFee: processingFee > 0 ? processingFee : undefined,
+            };
+
+            const emailSent = await sendPaymentReceivedEmail(adminEmail, emailData);
+            console.log(`[Webhook] Payment notification email ${emailSent ? 'sent' : 'failed'} to ${adminEmail}`);
+          } else {
+            console.warn('[Webhook] No admin email configured for payment notifications');
+          }
+        } catch (emailError) {
+          // Don't fail the webhook if email fails
+          console.error('[Webhook] Error sending payment notification email:', emailError);
+        }
+
         break;
       }
 

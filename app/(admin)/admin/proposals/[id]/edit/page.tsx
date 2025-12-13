@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -71,13 +71,7 @@ export default function EditProposalPage() {
     : 0;
   const totals = calculateTotal(subtotal, taxAmount, discountAmount);
 
-  useEffect(() => {
-    if (params.id) {
-      loadProposal(params.id as string);
-    }
-  }, [params.id]);
-
-  const loadProposal = async (id: string) => {
+  const loadProposal = useCallback(async (id: string) => {
     try {
       setLoading(true);
       const proposal = await getProposalById(id);
@@ -125,7 +119,13 @@ export default function EditProposalPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    if (params.id) {
+      loadProposal(params.id as string);
+    }
+  }, [params.id, loadProposal]);
 
   const addLineItem = () => {
     setLineItems([
@@ -397,7 +397,7 @@ export default function EditProposalPage() {
           </div>
 
           <div className="space-y-4">
-            {lineItems.map((item, index) => (
+            {lineItems.map((item) => (
               <div key={item.id} className="grid grid-cols-12 gap-3 items-end">
                 <div className="col-span-12 md:col-span-5">
                   <label className="block text-sm font-medium text-gray-700 mb-2">

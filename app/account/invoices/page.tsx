@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { Invoice, InvoiceStatus } from '@/types/invoice';
@@ -26,13 +26,7 @@ export default function CustomerInvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.email) {
-      loadInvoices();
-    }
-  }, [user]);
-
-  const loadInvoices = async () => {
+  const loadInvoices = useCallback(async () => {
     if (!user?.email) return;
 
     try {
@@ -44,7 +38,13 @@ export default function CustomerInvoicesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user?.email) {
+      loadInvoices();
+    }
+  }, [user, loadInvoices]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

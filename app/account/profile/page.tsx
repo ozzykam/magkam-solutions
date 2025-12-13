@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { changePassword, updateUserEmail } from '@/lib/firebase/auth';
@@ -50,13 +50,7 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  useEffect(() => {
-    if (firebaseUser) {
-      loadProfile();
-    }
-  }, [firebaseUser]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     if (!firebaseUser) return;
 
     try {
@@ -98,7 +92,13 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [firebaseUser]);
+
+  useEffect(() => {
+    if (firebaseUser) {
+      loadProfile();
+    }
+  }, [firebaseUser, loadProfile]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -238,3 +238,35 @@ export async function sendProposalApprovedEmail(
 
   return sendEmail({ to, subject, html });
 }
+
+/**
+ * Send payment received notification email
+ */
+export async function sendPaymentReceivedEmail(
+  to: string,
+  paymentData: {
+    invoiceNumber: string;
+    customerName: string;
+    customerEmail: string;
+    customerCompany?: string;
+    paymentAmount: number;
+    remainingBalance: number;
+    totalAmount: number;
+    paymentMethod: string;
+    cardBrand?: string;
+    cardLast4?: string;
+    paidAt: string;
+    invoiceTitle?: string;
+    processingFee?: number;
+  }
+): Promise<boolean> {
+  const { generatePaymentReceivedEmail } = await import('./templates/payment-received');
+
+  const html = generatePaymentReceivedEmail(paymentData);
+  const isPaidInFull = paymentData.remainingBalance <= 0;
+  const subject = isPaidInFull
+    ? `💰 Payment Received - ${paymentData.invoiceNumber} (Paid in Full)`
+    : `💰 Payment Received - ${paymentData.invoiceNumber}`;
+
+  return sendEmail({ to, subject, html });
+}
