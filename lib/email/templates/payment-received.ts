@@ -72,15 +72,20 @@ export function generatePaymentReceivedEmail(data: PaymentReceivedEmailData): st
           <tr>
             <td style="padding: 20px 30px; text-align: center; border-bottom: 2px solid #f3f4f6;">
               <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
-                Payment Amount
+                Invoice Payment
               </p>
               <p style="margin: 0; color: #10b981; font-size: 42px; font-weight: 700; line-height: 1.2;">
                 ${formatCurrency(data.paymentAmount)}
               </p>
               ${data.processingFee && data.processingFee > 0 ? `
-                <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 13px;">
-                  Includes ${formatCurrency(data.processingFee)} processing fee
-                </p>
+                <div style="margin: 16px 0 0 0; padding: 12px; background-color: #f3f4f6; border-radius: 8px; display: inline-block;">
+                  <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 12px;">
+                    Processing Fee: ${formatCurrency(data.processingFee)}
+                  </p>
+                  <p style="margin: 0; color: #111827; font-size: 14px; font-weight: 600;">
+                    Total Paid by Customer: ${formatCurrency(data.paymentAmount + data.processingFee)}
+                  </p>
+                </div>
               ` : ''}
             </td>
           </tr>

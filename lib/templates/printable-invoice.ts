@@ -251,15 +251,25 @@ export function generatePrintableInvoice(invoice: Invoice, businessInfo: {
     }
 
     .payment-list li {
-      padding: 8px 0;
+      padding: 12px 0;
       border-bottom: 1px solid #e5e7eb;
       display: flex;
       justify-content: space-between;
+      align-items: flex-start;
       font-size: 10pt;
     }
 
     .payment-list li:last-child {
       border-bottom: none;
+    }
+
+    .payment-list li > div {
+      flex: 1;
+    }
+
+    .payment-list li > strong {
+      margin-left: 16px;
+      white-space: nowrap;
     }
 
     .terms {
@@ -412,12 +422,32 @@ export function generatePrintableInvoice(invoice: Invoice, businessInfo: {
     <div class="payment-info">
       <h3>Payment History</h3>
       <ul class="payment-list">
-        ${invoice.payments.map((payment) => `
+        ${invoice.payments.map((payment) => {
+          // Handle backward compatibility - calculate totalPaid if not present
+          const totalPaid = payment.totalPaid ?? (payment.amount + (payment.processingFee || 0));
+          return `
           <li>
-            <span>${formatDate(payment.paidAt)} - ${payment.paymentMethod}${payment.cardBrand && payment.cardLast4 ? ` (${payment.cardBrand} ••••${payment.cardLast4})` : ''}</span>
-            <strong>${formatCurrency(payment.amount)}</strong>
+            <div>
+              <div style="font-weight: 600; color: #1f2937; margin-bottom: 4px;">
+                ${formatDate(payment.paidAt)} - ${payment.paymentMethod ? payment.paymentMethod.charAt(0).toUpperCase() + payment.paymentMethod.slice(1) : 'Payment'}${payment.cardBrand && payment.cardLast4 ? ` (${payment.cardBrand.charAt(0).toUpperCase() + payment.cardBrand.slice(1)} ••••${payment.cardLast4})` : ''}
+              </div>
+              <div style="font-size: 9pt; color: #6b7280;">
+                Invoice amount: ${formatCurrency(payment.amount)}${payment.processingFee && payment.processingFee > 0 ? ` + ${formatCurrency(payment.processingFee)} processing fee` : ''}
+              </div>
+            </div>
+            <strong style="color: #059669;">${formatCurrency(totalPaid)}</strong>
           </li>
-        `).join('')}
+        `;
+        }).join('')}
+        ${invoice.payments.reduce((sum, p) => sum + (p.processingFee || 0), 0) > 0 ? `
+          <li style="background-color: #f3f4f6; margin-top: 8px; font-weight: 600;">
+            <span>Total Paid (including processing fees)</span>
+            <strong style="color: #059669;">${formatCurrency(invoice.payments.reduce((sum, p) => {
+              const totalPaid = p.totalPaid ?? (p.amount + (p.processingFee || 0));
+              return sum + totalPaid;
+            }, 0))}</strong>
+          </li>
+        ` : ''}
       </ul>
     </div>
   ` : ''}

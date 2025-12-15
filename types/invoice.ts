@@ -44,7 +44,9 @@ export interface ClientInfo {
 export interface PaymentInfo {
   stripePaymentIntentId?: string;
   stripeChargeId?: string;
-  amount: number;
+  amount: number; // Invoice amount covered by this payment (does NOT include processing fee)
+  processingFee?: number; // Processing fee charged (0 for cash/check/ACH, 3% for card). Optional for backward compatibility.
+  totalPaid?: number; // Total amount customer actually paid (amount + processingFee). Optional for backward compatibility with old payments.
   paidAt: Timestamp;
   paymentMethod?: 'card' | 'ach' | 'bank_transfer' | 'check' | 'cash' | 'wire' | 'other';
   transactionNote?: string;
@@ -348,6 +350,28 @@ export const formatPaymentMethodSavings = (
   if (!paymentMethodDiscount || !paymentMethodDiscount.enabled) return null;
   const savings = calculateAchDiscount(total, paymentMethodDiscount);
   return `Save $${savings.toFixed(2)} (${paymentMethodDiscount.achDiscountPercent}%) by paying with ACH`;
+};
+
+/**
+ * Helper to calculate total amount actually paid by customer
+ * Includes all processing fees from card payments
+ * Handles backward compatibility with old payments that don't have totalPaid field
+ */
+export const calculateTotalCustomerPaid = (payments: PaymentInfo[]): number => {
+  return payments.reduce((sum, payment) => {
+    // If totalPaid exists, use it; otherwise calculate from amount + processingFee
+    // For old payments without these fields, totalPaid will equal amount (no fee)
+    const paid = payment.totalPaid ?? (payment.amount + (payment.processingFee || 0));
+    return sum + paid;
+  }, 0);
+};
+
+/**
+ * Helper to calculate total processing fees paid by customer
+ * Handles backward compatibility with old payments that don't have processingFee field
+ */
+export const calculateTotalProcessingFees = (payments: PaymentInfo[]): number => {
+  return payments.reduce((sum, payment) => sum + (payment.processingFee || 0), 0);
 };
 
 /**

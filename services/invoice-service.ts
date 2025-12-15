@@ -192,7 +192,7 @@ export const createProposal = async (
 
     // Remove undefined fields before saving to Firebase
     const cleanedProposal = Object.fromEntries(
-      Object.entries(newProposal).filter(([_, v]) => v !== undefined)
+      Object.entries(newProposal).filter(([, v]) => v !== undefined)
     );
 
     await setDoc(docRef, cleanedProposal);
@@ -604,7 +604,7 @@ export const cancelInvoice = async (id: string): Promise<void> => {
 export const recordPayment = async (
   invoiceId: string,
   userId: string,
-  payment: Omit<PaymentInfo, 'paidAt'> & { paidAt?: Timestamp }
+  payment: Omit<PaymentInfo, 'paidAt' | 'totalPaid'> & { paidAt?: Timestamp }
 ): Promise<void> => {
   try {
     const invoice = await getInvoiceById(invoiceId);
@@ -612,19 +612,25 @@ export const recordPayment = async (
       throw new Error('Invoice not found');
     }
 
+    // Calculate totalPaid (for manual payments, processingFee is usually 0)
+    const processingFee = payment.processingFee || 0;
+    const totalPaid = payment.amount + processingFee;
+
     const paymentWithTimestamp: PaymentInfo = {
       ...payment,
+      processingFee,
+      totalPaid,
       paidAt: payment.paidAt || Timestamp.now(),
     };
 
     const updatedPayments = [...invoice.payments, paymentWithTimestamp];
-    const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
-    const amountDue = invoice.total - totalPaid;
+    const totalAmountPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
+    const amountDue = invoice.total - totalAmountPaid;
 
     let newStatus: InvoiceStatus;
     if (amountDue <= 0) {
       newStatus = InvoiceStatus.PAID;
-    } else if (totalPaid > 0) {
+    } else if (totalAmountPaid > 0) {
       newStatus = InvoiceStatus.PARTIALLY_PAID;
     } else {
       newStatus = invoice.status;
@@ -632,7 +638,7 @@ export const recordPayment = async (
 
     const updates: any = {
       payments: updatedPayments,
-      amountPaid: totalPaid,
+      amountPaid: totalAmountPaid,
       amountDue: amountDue,
       status: newStatus,
     };

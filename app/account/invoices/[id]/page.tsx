@@ -9,6 +9,8 @@ import {
   InvoiceStatus,
   calculateProcessingFee,
   calculateTotalWithProcessingFee,
+  calculateTotalCustomerPaid,
+  calculateTotalProcessingFees,
   DEFAULT_PROCESSING_FEE
 } from '@/types/invoice';
 import { getInvoiceById, markInvoiceAsViewed } from '@/services/invoice-service';
@@ -219,7 +221,7 @@ export default function CustomerInvoiceDetailPage() {
       <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <p className="text-sm text-gray-600 mb-1">Total Amount</p>
+            <p className="text-sm text-gray-600 mb-1">Invoice Total</p>
             <p className="text-2xl font-bold text-gray-900">{formatCurrency(invoice.total)}</p>
           </div>
           <div>
@@ -231,6 +233,28 @@ export default function CustomerInvoiceDetailPage() {
             <p className="text-2xl font-bold text-orange-600">{formatCurrency(remainingBalance)}</p>
           </div>
         </div>
+
+        {/* Show total actually paid including processing fees */}
+        {invoice.payments && invoice.payments.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-blue-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Total You Paid (including fees)</p>
+                <p className="text-xl font-bold text-blue-600">
+                  {formatCurrency(calculateTotalCustomerPaid(invoice.payments))}
+                </p>
+              </div>
+              {calculateTotalProcessingFees(invoice.payments) > 0 && (
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Total Processing Fees</p>
+                  <p className="text-xl font-bold text-gray-600">
+                    {formatCurrency(calculateTotalProcessingFees(invoice.payments))}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Payment with Processing Fee */}
@@ -349,17 +373,35 @@ export default function CustomerInvoiceDetailPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <CreditCardIcon className="w-5 h-5 text-green-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {formatCurrency(payment.amount)}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {formatDate(payment.paidAt)}
-                          <br/>
-                          {payment.cardBrand && payment.cardLast4 && (
-                            <>{payment.cardBrand.charAt(0).toUpperCase() + payment.cardBrand.slice(1)} ••••{payment.cardLast4}</>
-                          )}
-                        </p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {formatCurrency(payment.amount)}
+                              {payment.processingFee && payment.processingFee > 0 && (
+                                <span className="text-sm text-gray-600 ml-2">
+                                  + {formatCurrency(payment.processingFee)} fee
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {formatDate(payment.paidAt)}
+                              <br/>
+                              {payment.cardBrand && payment.cardLast4 && (
+                                <>{payment.cardBrand.charAt(0).toUpperCase() + payment.cardBrand.slice(1)} ••••{payment.cardLast4}</>
+                              )}
+                              {payment.paymentMethod && payment.paymentMethod !== 'card' && (
+                                <>{payment.paymentMethod.toUpperCase()}</>
+                              )}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-gray-900">
+                              {formatCurrency(payment.totalPaid ?? (payment.amount + (payment.processingFee || 0)))}
+                            </p>
+                            <p className="text-xs text-gray-500">Total Paid</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

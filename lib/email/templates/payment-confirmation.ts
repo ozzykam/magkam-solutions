@@ -78,7 +78,7 @@ export function generatePaymentConfirmationEmail(data: PaymentConfirmationEmailD
                 <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%;">
                   <tr>
                     <td style="padding: 6px 0; color: #065f46; font-size: 14px; font-weight: 600;">
-                      Payment Amount
+                      Invoice Payment
                     </td>
                     <td style="padding: 6px 0; color: #065f46; font-size: 24px; font-weight: 700; text-align: right;">
                       ${formatCurrency(data.paymentAmount)}
@@ -86,8 +86,19 @@ export function generatePaymentConfirmationEmail(data: PaymentConfirmationEmailD
                   </tr>
                   ${data.processingFee && data.processingFee > 0 ? `
                   <tr>
-                    <td colspan="2" style="padding: 4px 0; color: #059669; font-size: 12px;">
-                      Includes ${formatCurrency(data.processingFee)} processing fee
+                    <td style="padding: 4px 0; color: #059669; font-size: 12px;">
+                      Processing Fee
+                    </td>
+                    <td style="padding: 4px 0; color: #059669; font-size: 12px; text-align: right;">
+                      ${formatCurrency(data.processingFee)}
+                    </td>
+                  </tr>
+                  <tr style="border-top: 1px solid #d1fae5;">
+                    <td style="padding: 8px 0 4px 0; color: #065f46; font-size: 14px; font-weight: 700;">
+                      Total You Paid
+                    </td>
+                    <td style="padding: 8px 0 4px 0; color: #065f46; font-size: 18px; font-weight: 700; text-align: right;">
+                      ${formatCurrency(data.paymentAmount + data.processingFee)}
                     </td>
                   </tr>
                   ` : ''}
@@ -114,7 +125,7 @@ export function generatePaymentConfirmationEmail(data: PaymentConfirmationEmailD
                 Hi ${data.customerName},
               </p>
               <p style="margin: 0 0 20px 0; color: #4b5563; font-size: 14px; line-height: 1.6;">
-                We've received your payment of <strong>${formatCurrency(data.paymentAmount)}</strong> for invoice ${data.invoiceNumber}.
+                We've received your payment of <strong>${formatCurrency(data.paymentAmount)}</strong>${data.processingFee && data.processingFee > 0 ? ` (you paid <strong>${formatCurrency(data.paymentAmount + data.processingFee)}</strong> including the ${formatCurrency(data.processingFee)} processing fee)` : ''} for invoice ${data.invoiceNumber}.
                 ${isPaidInFull ? 'Your invoice has been paid in full.' : `You have a remaining balance of ${formatCurrency(data.remainingBalance)}.`}
               </p>
             </td>

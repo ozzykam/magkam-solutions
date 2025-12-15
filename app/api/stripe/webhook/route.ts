@@ -97,8 +97,10 @@ export async function POST(request: NextRequest) {
         const payment: PaymentInfo = {
           stripePaymentIntentId: session.payment_intent as string,
           amount: invoiceAmount, // Invoice amount only, not including processing fee
+          processingFee: processingFee, // Processing fee charged (3% for card payments)
+          totalPaid: invoiceAmount + processingFee, // Total amount customer actually paid
           paymentMethod: 'card',
-          transactionNote: `Stripe payment - Session ${session.id}${processingFee > 0 ? ` (includes $${processingFee.toFixed(2)} processing fee)` : ''}`,
+          transactionNote: `Stripe card payment${processingFee > 0 ? ` (includes $${processingFee.toFixed(2)} processing fee)` : ''}`,
           paidAt: AdminTimestamp.now() as any,
           cardBrand,
           cardLast4,
