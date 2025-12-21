@@ -90,15 +90,21 @@ export default function AboutPage() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div
+          className="relative text-white bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: 'url(/aziz-and-crew.png)' }}
+        >
+          <div className="absolute inset-0 bg-black/50"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div className="text-center">
               <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                Thoughtful Websites & Web Apps for Real-World Businesses
+                Enterprise-Quality
+                <br/>Websites, Web Apps, & Mobile Apps
+                <br/>for Real-World Businesses
               </h1>
               <p className="text-xl md:text-2xl text-primary-100 max-w-3xl mx-auto">
                 MagKam Solutions designs and builds modern digital experiences that help
-                small teams look professional, work more efficiently, and connect more
+                teams of all sizes look professional, work more efficiently, and connect more
                 deeply with the people they serve.
               </p>
             </div>
@@ -108,14 +114,14 @@ export default function AboutPage() {
         {/* Our Story Section */}
         <div className="bg-white py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
+            <div className="max-w-3xl mx-auto">
+              <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Our Story</h2>
               <div className="text-lg text-gray-600 space-y-4">
                 <p>
-                  MagKam Solutions grew out of a simple pattern: talented people doing
-                  important work—running cafes, co-ops, small law practices, local
-                  services—stuck with clunky websites and tools that did not reflect the
-                  quality of what they actually do.
+                  MagKam Solutions grew out of observing an all-to-common pattern: talented 
+                  people running local, community-based organizations and small businesses,
+                  stuck with clunky websites and tools that did not reflect the quality of the
+                  important work they were doing in their communities.                  
                 </p>
                 <p>
                   We started building custom digital solutions to close that gap. Instead
@@ -126,8 +132,22 @@ export default function AboutPage() {
                 <p>
                   Today, we partner with small businesses, nonprofits, and community-based
                   organizations to create websites and web applications that feel
-                  intentional, reliable, and built to grow with you—not just launched and
-                  forgotten.
+                  intentional, reliable, and built to grow with you (and not just launched
+                  then forgotten).
+                </p>
+                <p>
+                  At MagKam Solutions, we do not simply deliver a product and disappear. We 
+                  partner closely with our clients, communicate clearly throughout the process,
+                  and design systems they can confidently grow with over time.
+                </p>
+                <p>
+                  We are especially passionate about working with local businesses, mission-driven
+                  organizations, and founders who care about the communities they serve.
+                </p>
+                <p>
+                  If you are looking for a development partner who understands both the 
+                  technical and human sides of building software, we are always happy to 
+                  start a conversation.
                 </p>
               </div>
             </div>

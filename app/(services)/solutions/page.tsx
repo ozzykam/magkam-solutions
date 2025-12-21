@@ -10,11 +10,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: `Solutions | ${businessName}`,
-    description: 'Custom web development solutions including websites, ecommerce platforms, custom software, and technical consulting for businesses of all sizes.',
-    keywords: 'web development, ecommerce platforms, custom software, technical consulting, React, Next.js, Firebase',
+    description: 'Custom web development solutions including websites, ecommerce platforms, mobile apps, custom software, and technical consulting for businesses of all sizes.',
+    keywords: 'web development, ecommerce platforms, mobile apps, iOS, Android, custom software, technical consulting, React, Next.js, Firebase',
     openGraph: {
       title: `Solutions | ${businessName}`,
-      description: 'Custom web development solutions tailored to your business needs.',
+      description: 'Custom web development and mobile app solutions tailored to your business needs.',
       type: 'website',
     },
   };
@@ -87,13 +87,17 @@ export default async function SolutionsPage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary-50 to-white py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+        <section
+          className="relative bg-cover bg-center bg-no-repeat py-16 md:py-24"
+          style={{ backgroundImage: 'url(/workspace-image.webp)' }}
+        >
+          <div className="absolute inset-0 bg-black/50"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
               Custom Solutions Built for Your Business
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Modern web development, ecommerce platforms, and custom software engineered for growth, performance, and scalability.
+            <p className="text-xl md:text-2xl text-gray-100 max-w-3xl mx-auto mb-8">
+              Modern web development, mobile apps, ecommerce platforms, and custom software engineered for growth, performance, and scalability.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -104,7 +108,7 @@ export default async function SolutionsPage() {
               </Link>
               <Link
                 href="/contact"
-                className="border-2 border-primary-600 text-primary-600 px-8 py-4 rounded-md font-semibold text-lg hover:bg-primary-50 active:bg-primary-100 transition-colors duration-200"
+                className="border-2 border-white text-white px-8 py-4 rounded-md font-semibold text-lg hover:bg-white/10 active:bg-white/20 transition-colors duration-200"
               >
                 Request Consultation
               </Link>
@@ -157,6 +161,24 @@ export default async function SolutionsPage() {
                 icon={
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                }
+              />
+
+              <SolutionCard
+                title="Mobile Apps"
+                tagline="Cross-platform iOS and Android apps with React Native"
+                pricing="Starting at $12,000"
+                features={[
+                  'Single codebase for iOS and Android',
+                  'Built with React Native',
+                  'App Store and Play Store deployment',
+                  'Push notifications and offline support',
+                ]}
+                href="/solutions/mobile-apps"
+                icon={
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 }
               />

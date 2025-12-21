@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
-import SearchBar from '@/components/layout/SearchBar';
+import HomeHero from '@/components/home/HomeHero';
 
 /**
  * Generate metadata for SEO
@@ -97,34 +97,7 @@ export default async function Home() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="bg-gradient-to-b from-primary-50 to-white py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-                {homepage.hero.headline}
-                <br />
-                <span className="text-primary-600">{homepage.hero.highlightedText}</span>
-              </h1>
-              <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-                {homepage.hero.subtitle}
-              </p>
-              {/* Search Bar */}
-              <SearchBar className="max-w-sm mx-auto mb-12 top-4"/>
-              <div className="flex gap-4 justify-center">
-                <Link href={homepage.hero.primaryCTA.link}>
-                  <Button variant="primary" size="lg">
-                    {homepage.hero.primaryCTA.text}
-                  </Button>
-                </Link>
-                <Link href={homepage.hero.secondaryCTA.link}>
-                  <Button variant="outline" size="lg">
-                    {homepage.hero.secondaryCTA.text}
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
+        <HomeHero hero={homepage.hero} />
 
         {/* Features Section */}
         <section className="py-16 bg-white">

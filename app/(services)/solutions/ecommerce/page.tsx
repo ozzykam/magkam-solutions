@@ -56,13 +56,17 @@ export default async function EcommercePage() {
         </nav>
 
         {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary-50 to-white py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section
+          className="relative bg-cover bg-center bg-no-repeat py-16 md:py-24"
+          style={{ backgroundImage: 'url(/ecommerce-hero.webp)' }}
+        >
+          <div className="absolute inset-0 bg-black/50"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
                 Custom Ecommerce Platforms Built Around Your Business — Not a Template
               </h1>
-              <p className="text-xl md:text-2xl text-gray-600 mb-8">
+              <p className="text-xl md:text-2xl text-gray-100 mb-8">
                 A flexible, scalable ecommerce engine tailored to your operations and customer experience.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -74,7 +78,7 @@ export default async function EcommercePage() {
                 </Link>
                 <Link
                   href="/contact"
-                  className="border-2 border-primary-600 text-primary-600 px-8 py-4 rounded-md font-semibold text-lg hover:bg-primary-50 active:bg-primary-100 transition-colors duration-200"
+                  className="border-2 border-white text-white px-8 py-4 rounded-md font-semibold text-lg hover:bg-white/10 active:bg-white/20 transition-colors duration-200"
                 >
                   Request a Free Consultation
                 </Link>
