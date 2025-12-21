@@ -11,6 +11,8 @@ import {
   TruckIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
+
+import { ArrowRightCircleIcon } from '@heroicons/react/24/solid';
 import { getStoreSettings } from '@/services/business-info-service';
 import { getSEOForRoute, applyTemplateVariables } from '@/services/seo-service';
 
@@ -120,13 +122,15 @@ export default function AboutPage() {
               <div className="text-lg text-gray-600 space-y-4">
                 {/* Image with caption - floats on larger screens */}
                 <div className="float-none sm:float-left sm:mr-6 sm:mb-4 mb-6 text-center sm:w-64">
-                  <Image
-                    width={300}
-                    height={300}
-                    src="/aziz-pic.webp"
-                    alt="Aziz Kamara, Founder and Lead Developer"
-                    className="w-48 sm:w-full sm:h-auto rounded-lg object-cover shadow-lg mx-auto"
-                  />
+                  <Link href="https://magkam.com" target="_blank" rel="noopener noreferrer" className="block cursor-pointer">
+                    <Image
+                      width={300}
+                      height={300}
+                      src="/aziz-pic.webp"
+                      alt="Aziz Kamara, Founder and Lead Developer"
+                      className="w-48 sm:w-full sm:h-auto rounded-lg object-cover shadow-lg mx-auto hover:shadow-xl transition-shadow duration-200"
+                    />
+                  </Link>
                   <div className="mt-3">
                     <p className="font-bold text-gray-900">Aziz Kamara</p>
                     <p className="text-sm text-primary-600 font-semibold">Founder and Lead Developer</p>
@@ -165,6 +169,14 @@ export default function AboutPage() {
                   technical and human sides of building software, we are always happy to
                   start a conversation.
                 </p>
+                  <Link
+                      href="https://magkam.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary-600 hover:text-primary-700 font-semibold mt-1 float-right inline-block"
+                  >
+                    ...more about Aziz <ArrowRightCircleIcon className="w-4 h-4 inline-block" />
+                  </Link>
               </div>
             </div>
           </div>
