@@ -132,7 +132,7 @@ export default async function SolutionsPage() {
               <SolutionCard
                 title="Websites"
                 tagline="Modern, mobile-first websites built for growth"
-                pricing="$750 - $7,500"
+                pricing="$1,200 - $7,500"
                 features={[
                   'Custom design with no templates',
                   'SEO optimized and mobile responsive',
