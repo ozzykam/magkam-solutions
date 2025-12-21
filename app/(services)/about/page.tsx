@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import Header from '@/components/layout/Header';
@@ -117,16 +118,31 @@ export default function AboutPage() {
             <div className="max-w-3xl mx-auto">
               <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Our Story</h2>
               <div className="text-lg text-gray-600 space-y-4">
+                {/* Image with caption - floats on larger screens */}
+                <div className="float-none sm:float-left sm:mr-6 sm:mb-4 mb-6 text-center sm:w-64">
+                  <Image
+                    width={300}
+                    height={300}
+                    src="/aziz-pic.webp"
+                    alt="Aziz Kamara, Founder and Lead Developer"
+                    className="w-48 sm:w-full sm:h-auto rounded-lg object-cover shadow-lg mx-auto"
+                  />
+                  <div className="mt-3">
+                    <p className="font-bold text-gray-900">Aziz Kamara</p>
+                    <p className="text-sm text-primary-600 font-semibold">Founder and Lead Developer</p>
+                  </div>
+                </div>
+
                 <p>
-                  MagKam Solutions grew out of observing an all-to-common pattern: talented 
+                  MagKam Solutions grew out of observing an all-to-common pattern: talented
                   people running local, community-based organizations and small businesses,
                   stuck with clunky websites and tools that did not reflect the quality of the
-                  important work they were doing in their communities.                  
+                  important work they were doing in their communities.
                 </p>
                 <p>
                   We started building custom digital solutions to close that gap. Instead
                   of forcing businesses into rigid templates, we focus on understanding
-                  how you operate, who you serve, and what “a good day” looks like for
+                  how you operate, who you serve, and what &quot;a good day&quot; looks like for
                   you and your team.
                 </p>
                 <p>
@@ -136,7 +152,7 @@ export default function AboutPage() {
                   then forgotten).
                 </p>
                 <p>
-                  At MagKam Solutions, we do not simply deliver a product and disappear. We 
+                  At MagKam Solutions, we do not simply deliver a product and disappear. We
                   partner closely with our clients, communicate clearly throughout the process,
                   and design systems they can confidently grow with over time.
                 </p>
@@ -145,8 +161,8 @@ export default function AboutPage() {
                   organizations, and founders who care about the communities they serve.
                 </p>
                 <p>
-                  If you are looking for a development partner who understands both the 
-                  technical and human sides of building software, we are always happy to 
+                  If you are looking for a development partner who understands both the
+                  technical and human sides of building software, we are always happy to
                   start a conversation.
                 </p>
               </div>
