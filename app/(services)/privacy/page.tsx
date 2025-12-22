@@ -70,15 +70,16 @@ export default async function PrivacyPage() {
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
             <li><strong>Create an account:</strong> Name, email address, phone number, password</li>
-            <li><strong>Place an order:</strong> Billing address, delivery address, payment information</li>
+            <li><strong>Request a consultation or quote:</strong> Business information, project requirements, contact details</li>
+            <li><strong>Engage our services:</strong> Billing address, payment information, company details</li>
             <li><strong>Contact us:</strong> Any information you provide in correspondence</li>
             <li><strong>Participate in surveys:</strong> Feedback, preferences, and opinions</li>
-            <li><strong>Leave reviews:</strong> Service ratings and comments</li>
+            <li><strong>Provide feedback:</strong> Service ratings, testimonials, and reviews</li>
           </ul>
 
           <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">2.2 Payment Information</h3>
           <p className="text-gray-700 mb-4">
-            We use secure third-party payment processors to handle all payment transactions. We do not store
+            We use secure third-party payment processors (Stripe) to handle all payment transactions. We do not store
             complete credit card numbers or CVV codes on our servers. Payment information is encrypted and
             transmitted directly to our payment processor using industry-standard SSL/TLS encryption.
           </p>
@@ -90,17 +91,17 @@ export default async function PrivacyPage() {
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
             <li><strong>Device Information:</strong> IP address, browser type, operating system, device identifiers</li>
             <li><strong>Usage Data:</strong> Pages visited, time spent, links clicked, search queries</li>
-            <li><strong>Location Data:</strong> General location based on IP address (not precise GPS unless you grant permission)</li>
+            <li><strong>Location Data:</strong> General location based on IP address for regional service availability</li>
             <li><strong>Cookies and Tracking:</strong> We use cookies, web beacons, and similar technologies (see Section 6)</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">2.4 Shopping and Preference Information</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">2.4 Project and Business Information</h3>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li>Order history and purchase patterns</li>
-            <li>Service preferences and favorites</li>
-            <li>Shopping cart contents</li>
-            <li>Dietary preferences and restrictions (if provided)</li>
-            <li>Delivery/pickup preferences and saved time slots</li>
+            <li>Project requirements and specifications provided during consultations</li>
+            <li>Communication history related to your projects</li>
+            <li>Service preferences and technology stack preferences</li>
+            <li>Business information and industry details (when relevant to project requirements)</li>
+            <li>Access credentials for third-party services (stored securely and only with permission)</li>
           </ul>
         </section>
 
@@ -110,12 +111,12 @@ export default async function PrivacyPage() {
             We use the information we collect for the following purposes:
           </p>
 
-          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.1 Order Fulfillment</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.1 Project Management and Delivery</h3>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li>Process and fulfill your orders</li>
-            <li>Communicate about your orders (confirmations, updates, delivery notifications)</li>
-            <li>Coordinate delivery or pickup</li>
-            <li>Handle returns, refunds, and customer service requests</li>
+            <li>Manage and deliver software development projects</li>
+            <li>Communicate project status, milestones, and updates</li>
+            <li>Coordinate project timelines and deliverables</li>
+            <li>Handle support requests, bug fixes, and maintenance</li>
           </ul>
 
           <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.2 Account Management</h3>
@@ -126,19 +127,19 @@ export default async function PrivacyPage() {
             <li>Send administrative information and service updates</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.3 Personalization</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.3 Service Customization</h3>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li>Personalize your shopping experience</li>
-            <li>Recommend services based on your preferences</li>
-            <li>Remember your delivery addresses and payment methods</li>
-            <li>Show relevant promotions and deals</li>
+            <li>Tailor project solutions to your business needs</li>
+            <li>Recommend appropriate technology stacks and approaches</li>
+            <li>Remember your preferences and project requirements</li>
+            <li>Provide relevant case studies and examples</li>
           </ul>
 
           <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.4 Marketing Communications</h3>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li>Send promotional emails about new services, sales, and special offers (you can opt out)</li>
-            <li>Notify you about abandoned carts</li>
-            <li>Share relevant content and newsletters</li>
+            <li>Send promotional emails about new services and special offers (you can opt out)</li>
+            <li>Share case studies, technical articles, and industry insights</li>
+            <li>Provide relevant content and newsletters</li>
           </ul>
 
           <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.5 Analytics and Improvement</h3>
@@ -169,12 +170,12 @@ export default async function PrivacyPage() {
             We share information with third-party service providers who perform services on our behalf:
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li><strong>Payment Processors:</strong> To process credit card and other payment transactions</li>
-            <li><strong>Delivery Services:</strong> To fulfill delivery orders</li>
-            <li><strong>Cloud Hosting:</strong> Firebase/Google Cloud Platform for secure data storage</li>
+            <li><strong>Payment Processors:</strong> To process credit card and other payment transactions (Stripe)</li>
+            <li><strong>Cloud Hosting:</strong> Firebase/Google Cloud Platform for secure data storage and hosting</li>
             <li><strong>Email Services:</strong> To send transactional and marketing emails</li>
             <li><strong>Analytics Providers:</strong> To analyze website usage and performance</li>
-            <li><strong>Customer Support Tools:</strong> To provide customer service</li>
+            <li><strong>Customer Support Tools:</strong> To provide customer service and project communication</li>
+            <li><strong>Development Tools:</strong> Third-party APIs and services integrated into your projects (with your authorization)</li>
           </ul>
           <p className="text-gray-700 mb-4">
             These service providers are contractually obligated to protect your information and only use it for
@@ -226,7 +227,7 @@ export default async function PrivacyPage() {
 
           <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">6.1 Types of Cookies</h3>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li><strong>Essential Cookies:</strong> Required for website functionality (authentication, shopping cart)</li>
+            <li><strong>Essential Cookies:</strong> Required for website functionality (authentication, session management)</li>
             <li><strong>Preference Cookies:</strong> Remember your settings and preferences</li>
             <li><strong>Analytics Cookies:</strong> Help us understand how visitors use our site</li>
             <li><strong>Marketing Cookies:</strong> Track visits across websites for advertising purposes</li>
@@ -260,14 +261,14 @@ export default async function PrivacyPage() {
           <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">7.3 Deletion</h3>
           <p className="text-gray-700 mb-4">
             You can request that we delete your personal information, subject to certain legal exceptions (e.g.,
-            we may need to retain order history for accounting purposes).
+            we may need to retain project history for accounting and legal purposes).
           </p>
 
           <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">7.4 Opt-Out of Marketing</h3>
           <p className="text-gray-700 mb-4">
             You can opt out of marketing emails by clicking the &quot;unsubscribe&quot; link in any marketing email or by
             updating your email preferences in your account settings. You will still receive transactional emails
-            related to your orders.
+            related to your projects and services.
           </p>
 
           <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">7.5 Do Not Track</h3>
@@ -294,7 +295,7 @@ export default async function PrivacyPage() {
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
             <li><strong>Account Information:</strong> Retained while your account is active</li>
-            <li><strong>Order History:</strong> Retained for 7 years for tax and accounting purposes</li>
+            <li><strong>Project History:</strong> Retained for 7 years for tax, accounting, and legal purposes</li>
             <li><strong>Marketing Data:</strong> Retained until you opt out or request deletion</li>
             <li><strong>Analytics Data:</strong> Anonymized after 26 months</li>
           </ul>

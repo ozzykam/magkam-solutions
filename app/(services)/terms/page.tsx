@@ -36,12 +36,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function TermsPage() {
   const settings = await getStoreSettings();
-  const businessName = settings.businessName || 'Local Market';
-  const email = settings.email || 'legal@localmarket.com';
-  const phone = settings.phone || '[Your Phone Number]';
-  const address = settings.address
-    ? `${settings.address.street}, ${settings.address.city}, ${settings.address.state} ${settings.address.zipCode}`
-    : '[Your Address]';
+  const businessName = settings.businessName || 'MagKam Solutions';
+  const email = settings.email || 'aziz@magkam.com';
+  const phone = settings.phone || '[your number here]';
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-4xl font-bold text-gray-900 mb-2">Terms of Service</h1>
@@ -76,74 +73,111 @@ export default async function TermsPage() {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Orders and Payments</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Services and Project Agreements</h2>
 
-          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.1 Order Placement</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.1 Service Offerings</h3>
           <p className="text-gray-700 mb-4">
-            When you place an order through our Service, you are making an offer to purchase products at the
-            stated price. All orders are subject to acceptance and availability. We reserve the right to refuse
-            or cancel any order for any reason, including:
+            {businessName} provides custom software development services including but not limited to:
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li>Product unavailability or out of stock</li>
-            <li>Errors in product or pricing information</li>
-            <li>Suspected fraudulent or unauthorized transactions</li>
-            <li>Orders that cannot be fulfilled for any reason</li>
+            <li>Custom website development (Next.js, React, Angular)</li>
+            <li>Mobile application development (React Native, iOS, Android)</li>
+            <li>Custom ecommerce platforms and marketplaces</li>
+            <li>Custom software solutions (CRMs, SaaS platforms, internal tools)</li>
+            <li>Technical consulting and code review services</li>
           </ul>
 
-          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.2 Pricing</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.2 Project Proposals and Pricing</h3>
           <p className="text-gray-700 mb-4">
-            All prices are displayed in USD and are subject to change without notice. We make every effort to
-            ensure pricing accuracy, but errors may occur. If a product&apos;s correct price is higher than stated,
-            we will either contact you before shipping or cancel your order and notify you.
+            All projects begin with a consultation and written proposal outlining scope, deliverables, timeline,
+            and pricing. Pricing is project-specific and based on complexity, features, and estimated development time.
+            All prices are quoted in USD. We reserve the right to decline projects that are not a good fit or that
+            fall outside our area of expertise.
           </p>
 
-          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.3 Payment</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">3.3 Payment Terms</h3>
           <p className="text-gray-700 mb-4">
-            Payment is required at the time of order placement. We accept major credit cards and other payment
-            methods as indicated on our checkout page. By providing payment information, you represent that you
-            are authorized to use the payment method and authorize us to charge the total amount including taxes
-            and delivery fees.
+            Payment terms are specified in individual project agreements and typically include:
+          </p>
+          <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <li>Initial deposit (typically 30-50%) required before work begins</li>
+            <li>Milestone payments for larger projects</li>
+            <li>Final payment due upon project completion and delivery</li>
+            <li>Monthly retainer payments for ongoing maintenance and support services</li>
+          </ul>
+          <p className="text-gray-700 mb-4">
+            We accept payment via credit card, ACH transfer, or other methods as specified in your project agreement.
+            Late payments may result in suspension of work or termination of services.
           </p>
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Delivery and Pickup</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Project Delivery and Timelines</h2>
 
-          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">4.1 Delivery Times</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">4.1 Project Timelines</h3>
           <p className="text-gray-700 mb-4">
-            We offer scheduled delivery and pickup time slots. While we strive to meet all scheduled times,
-            delivery windows are estimates and not guaranteed. Delays may occur due to weather, traffic, or
-            other unforeseen circumstances.
+            Project timelines are estimates provided in good faith based on the defined scope of work. Actual
+            delivery dates may vary due to:
+          </p>
+          <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <li>Changes in project scope or requirements</li>
+            <li>Delays in client feedback or approval</li>
+            <li>Technical challenges or third-party service dependencies</li>
+            <li>Force majeure events beyond our reasonable control</li>
+          </ul>
+          <p className="text-gray-700 mb-4">
+            While we make every effort to meet agreed timelines, they are not guaranteed unless specifically
+            stated as a hard deadline in the project agreement.
           </p>
 
-          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">4.2 Delivery Requirements</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">4.2 Client Responsibilities</h3>
+          <p className="text-gray-700 mb-4">Timely project completion requires client cooperation, including:</p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li>Someone 21 years or older must be present to receive orders containing age-restricted items</li>
-            <li>You must provide accurate delivery address and contact information</li>
-            <li>Orders may be left at your door for contactless delivery unless otherwise specified</li>
-            <li>You are responsible for inspecting your order upon delivery</li>
+            <li>Providing necessary content, assets, and access credentials</li>
+            <li>Responding to requests for feedback within agreed timeframes</li>
+            <li>Making timely decisions on design and functionality choices</li>
+            <li>Completing testing and providing feedback during review periods</li>
           </ul>
-
-          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">4.3 Pickup Orders</h3>
           <p className="text-gray-700 mb-4">
-            For pickup orders, you must collect your order during your selected time slot. Orders not collected
-            within 24 hours may be canceled without refund. You may need to show identification and order
-            confirmation when collecting your order.
+            Delays caused by client non-responsiveness or late delivery of required materials may result in
+            project timeline extensions and potential additional costs.
+          </p>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">4.3 Project Delivery and Handoff</h3>
+          <p className="text-gray-700 mb-4">
+            Upon project completion, we will deliver all agreed-upon deliverables including source code,
+            documentation, and deployment instructions as specified in the project agreement. You are
+            responsible for reviewing deliverables and reporting any issues within the agreed warranty period.
           </p>
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Product Information</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Intellectual Property and Ownership</h2>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">5.1 Code Ownership</h3>
           <p className="text-gray-700 mb-4">
-            We make every effort to display products accurately with detailed descriptions and images. However:
+            Unless otherwise specified in the project agreement, upon full payment, you will receive full ownership
+            of the custom code and assets developed specifically for your project. This includes:
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li>Colors and images may vary slightly from actual products</li>
-            <li>Product weights and sizes are approximate</li>
-            <li>Fresh produce quality may vary based on seasonal availability</li>
-            <li>Product substitutions may occur for out-of-stock items (we will contact you when possible)</li>
+            <li>Custom application code written for your project</li>
+            <li>Custom designs and graphics created for your project</li>
+            <li>Project documentation and user guides</li>
           </ul>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">5.2 Third-Party Components</h3>
+          <p className="text-gray-700 mb-4">
+            Projects may include third-party libraries, frameworks, and open-source components that remain under
+            their respective licenses. We will inform you of any significant third-party dependencies and their
+            licensing requirements.
+          </p>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">5.3 Portfolio Rights</h3>
+          <p className="text-gray-700 mb-4">
+            {businessName} reserves the right to display completed projects in our portfolio, marketing materials,
+            and case studies unless otherwise agreed in writing. We will not disclose confidential business
+            information without your permission.
+          </p>
         </section>
 
         <section className="mb-8">
@@ -161,10 +195,30 @@ export default async function TermsPage() {
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Returns and Refunds</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Refunds and Cancellations</h2>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">7.1 Deposit Refunds</h3>
           <p className="text-gray-700 mb-4">
-            Please refer to our <Link href="/returns" className="text-primary-600 hover:text-primary-700">Return and Refund Policy</Link> for
-            detailed information about returns, refunds, and product satisfaction guarantees.
+            Initial project deposits are generally non-refundable once work has commenced. If you cancel a project
+            before work begins, deposits may be refunded minus any consultation time or administrative costs incurred.
+          </p>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">7.2 Project Cancellation</h3>
+          <p className="text-gray-700 mb-4">
+            Either party may terminate a project with written notice. In the event of cancellation:
+          </p>
+          <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <li>Client will pay for all work completed up to the cancellation date</li>
+            <li>{businessName} will deliver any completed work or work-in-progress</li>
+            <li>Remaining deposits or prepayments will be refunded after deducting costs for work performed</li>
+          </ul>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">7.3 Satisfaction and Revisions</h3>
+          <p className="text-gray-700 mb-4">
+            Project agreements include a specified number of revision rounds. We will work with you to ensure
+            satisfaction within the agreed scope. Additional revisions beyond the agreed amount may incur
+            additional fees. Please refer to our <Link href="/returns" className="text-primary-600 hover:text-primary-700">Refund Policy</Link> for
+            more details.
           </p>
         </section>
 
@@ -188,29 +242,44 @@ export default async function TermsPage() {
             directly or indirectly, or any loss of data, use, goodwill, or other intangible losses resulting from:
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li>Your access to or use of or inability to access or use the Service</li>
+            <li>Your access to or use of or inability to access or use the Service or delivered software</li>
             <li>Any conduct or content of any third party on the Service</li>
             <li>Unauthorized access, use, or alteration of your transmissions or content</li>
-            <li>Food-borne illness or allergic reactions to products purchased</li>
+            <li>Software bugs, errors, or failures in third-party services or dependencies</li>
+            <li>Business losses or damages claimed to result from software downtime or defects</li>
           </ul>
           <p className="text-gray-700 mb-4">
-            Our total liability to you for any claim arising from or relating to the Service shall not exceed
-            the amount you paid to us in the twelve (12) months preceding the claim.
+            Our total liability to you for any claim arising from or relating to our services shall not exceed
+            the total amount you paid to us for the specific project or service in question.
           </p>
         </section>
 
         <section className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Food Safety and Allergens</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Warranties and Support</h2>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">10.1 Warranty Period</h3>
           <p className="text-gray-700 mb-4">
-            While we strive to provide accurate product information including allergen warnings:
+            We provide a limited warranty on our work for a period specified in your project agreement (typically
+            30-90 days after final delivery). During this period, we will fix bugs and defects in our code at no
+            additional charge.
           </p>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">10.2 Warranty Exclusions</h3>
+          <p className="text-gray-700 mb-4">Our warranty does not cover:</p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
-            <li>You are responsible for reading all product labels and ingredients</li>
-            <li>Products may contain or have been processed in facilities with common allergens</li>
-            <li>Cross-contamination may occur during processing, packaging, or delivery</li>
-            <li>We are not liable for allergic reactions or food-borne illnesses</li>
-            <li>Consult product packaging and manufacturer information for complete allergen details</li>
+            <li>Issues caused by modifications made by you or third parties</li>
+            <li>Problems arising from hosting environment changes or incompatibilities</li>
+            <li>Third-party service failures or API changes</li>
+            <li>Feature requests or changes beyond the original scope</li>
+            <li>Issues caused by improper use or deployment of the software</li>
           </ul>
+
+          <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-4">10.3 Ongoing Support and Maintenance</h3>
+          <p className="text-gray-700 mb-4">
+            After the warranty period, ongoing support and maintenance services are available through monthly
+            retainer agreements. Support services may include bug fixes, minor updates, security patches, and
+            technical assistance as specified in the support agreement.
+          </p>
         </section>
 
         <section className="mb-8">
@@ -260,9 +329,6 @@ export default async function TermsPage() {
             </p>
             <p className="text-gray-700 mb-2">
               <strong>Phone:</strong> {phone}
-            </p>
-            <p className="text-gray-700 mb-2">
-              <strong>Mail:</strong> {businessName} Legal Department, {address}
             </p>
             <p className="text-gray-700">
               <strong>Contact Form:</strong> <Link href="/contact" className="text-primary-600 hover:text-primary-700">Visit our contact page</Link>

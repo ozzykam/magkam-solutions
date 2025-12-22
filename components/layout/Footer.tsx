@@ -217,13 +217,28 @@ const Footer: React.FC = () => {
               <h3 className="text-white font-semibold mb-4">{serviceSettings.serviceNamePlural}</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link href={`/${serviceSettings.urlSlug}`} className="text-sm hover:text-primary-500 transition-colors">
-                    All {serviceSettings.serviceNamePlural}
+                  <Link href="/solutions" className="text-sm hover:text-primary-500 transition-colors">
+                    <strong>All Solutions</strong>
                   </Link>
                 </li>
                 <li>
-                  <Link href="/solutions" className="text-sm hover:text-primary-500 transition-colors">
-                    Solutions
+                  <Link href="/solutions/websites" className="text-sm hover:text-primary-500 transition-colors">
+                    Websites
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/solutions/ecommerce" className="text-sm hover:text-primary-500 transition-colors">
+                    E-commerce
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/solutions/mobile-apps" className="text-sm hover:text-primary-500 transition-colors">
+                    Mobile Apps
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/solutions/consulting" className="text-sm hover:text-primary-500 transition-colors">
+                    Consulting
                   </Link>
                 </li>
                 {features.calculators?.enabled && (
