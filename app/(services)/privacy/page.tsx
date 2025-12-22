@@ -39,9 +39,6 @@ export default async function PrivacyPage() {
   const businessName = settings.businessName || 'Local Market';
   const email = settings.email || 'privacy@localmarket.com';
   const phone = settings.phone || '[Your Phone Number]';
-  const address = settings.address
-    ? `${settings.address.street}, ${settings.address.city}, ${settings.address.state} ${settings.address.zipCode}`
-    : '[Your Address]';
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-4xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
@@ -398,9 +395,6 @@ export default async function PrivacyPage() {
             </p>
             <p className="text-gray-700 mb-2">
               <strong>Phone:</strong> {phone}
-            </p>
-            <p className="text-gray-700 mb-2">
-              <strong>Mail:</strong> {businessName} Privacy Department, {address}
             </p>
             <p className="text-gray-700">
               <strong>Contact Form:</strong>{' '}
