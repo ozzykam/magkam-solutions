@@ -11,25 +11,34 @@ import {
   unarchiveMessage,
   deleteContactMessage,
 } from '@/services/contact-message-service';
+import { convertFromContactMessage } from '@/services/prospect-service';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Modal from '@/components/ui/Modal';
+import { useToast } from '@/components/ui';
 import {
   EnvelopeIcon,
   EnvelopeOpenIcon,
   ArchiveBoxIcon,
   ClockIcon,
+  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 
 export default function MessagesPage() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [messages, setMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread' | 'archived'>('unread');
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [showModal, setShowModal] = useState(false);
+
+  // Convert to prospect state
+  const [convertMessage, setConvertMessage] = useState<ContactMessage | null>(null);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
 
   useEffect(() => {
     loadMessages();
@@ -112,6 +121,29 @@ export default function MessagesPage() {
       setShowModal(false);
     } catch (error) {
       console.error('Error deleting message:', error);
+    }
+  };
+
+  const handleOpenConvertModal = (message: ContactMessage, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConvertMessage(message);
+    setShowConvertModal(true);
+  };
+
+  const handleConvertToProspect = async () => {
+    if (!user || !convertMessage) return;
+    setIsConverting(true);
+    try {
+      await convertFromContactMessage(convertMessage, user.uid);
+      setShowConvertModal(false);
+      showToast(
+        'Prospect created — view in Prospects',
+        'success'
+      );
+    } catch {
+      showToast('Failed to create prospect', 'error');
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -260,7 +292,15 @@ export default function MessagesPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
+                    <button
+                      onClick={(e) => handleOpenConvertModal(message, e)}
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+                      title="Convert to Prospect"
+                    >
+                      <UserPlusIcon className="w-5 h-5" />
+                    </button>
+
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -294,6 +334,43 @@ export default function MessagesPage() {
         </div>
       )}
 
+      {/* Convert to Prospect Modal */}
+      {convertMessage && (
+        <Modal
+          isOpen={showConvertModal}
+          onClose={() => setShowConvertModal(false)}
+          title="Convert to Prospect"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Create a new prospect from this contact form submission?
+            </p>
+            <div className="bg-gray-50 rounded-lg p-3 space-y-1 text-sm">
+              <p className="font-medium text-gray-900">{convertMessage.name}</p>
+              <p className="text-gray-600">{convertMessage.email}</p>
+              <p className="text-gray-500 italic line-clamp-2">{convertMessage.subject}</p>
+            </div>
+            <p className="text-xs text-gray-500">
+              The prospect will be created with status "New" and source "Contact Form".
+              You can update details from the Prospects page.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowConvertModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConvertToProspect}
+                loading={isConverting}
+                leftIcon={<UserPlusIcon className="h-4 w-4" />}
+              >
+                Create Prospect
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Message Detail Modal */}
       {selectedMessage && (
         <Modal
@@ -323,27 +400,29 @@ export default function MessagesPage() {
               <p className="text-sm text-gray-600">{formatDate(selectedMessage.createdAt)}</p>
             </div>
 
-            <div className="flex gap-3 pt-4 border-t">
+            <div className="flex gap-3 pt-4 border-t flex-wrap">
+              <Button
+                variant="outline"
+                onClick={() => handleOpenConvertModal(selectedMessage, { stopPropagation: () => {} } as React.MouseEvent)}
+                leftIcon={<UserPlusIcon className="h-4 w-4" />}
+              >
+                Convert to Prospect
+              </Button>
               <Button
                 variant="outline"
                 onClick={() => handleToggleArchive(selectedMessage.id, !selectedMessage.isArchived)}
-                fullWidth
               >
                 {selectedMessage.isArchived ? 'Unarchive' : 'Archive'}
               </Button>
-
               <Button
                 variant="outline"
                 onClick={() => handleDelete(selectedMessage.id)}
-                fullWidth
               >
                 Delete
               </Button>
-
               <Button
                 variant="primary"
                 onClick={() => window.location.href = `mailto:${selectedMessage.email}?subject=Re: ${selectedMessage.subject}`}
-                fullWidth
               >
                 Reply via Email
               </Button>

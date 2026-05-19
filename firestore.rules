@@ -379,5 +379,30 @@ service cloud.firestore {
       // Only admins can delete counters
       allow delete: if isAdmin();
     }
+
+    // Prospects collection (CRM)
+    match /prospects/{prospectId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Activity entries collection (admin time tracker)
+    match /activityEntries/{entryId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Projects collection (admin project tracker)
+    match /projects/{projectId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Todos collection (per-user checklist)
+    match /todos/{todoId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Job applications collection (admin job search tracker)
+    match /jobApplications/{appId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query, where, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
+import { pauseTimer, resumeTimer, stopTimer, getElapsedSeconds, formatElapsed } from '@/services/activity-service';
+import { ActivityEntry } from '@/types/activity';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { UserRole } from '@/types';
 import { StoreSettings } from '@/types/business-info';
@@ -25,8 +27,13 @@ import {
   HomeIcon,
   DocumentTextIcon,
   AdjustmentsHorizontalIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  ClockIcon,
+  UserGroupIcon,
+  FolderIcon,
+  BriefcaseIcon,
 } from '@heroicons/react/24/outline';
+import { PauseIcon, StopIcon, PlayIcon as PlayIconSolid } from '@heroicons/react/24/solid';
 
 export default function AdminLayout({
   children,
@@ -38,6 +45,9 @@ export default function AdminLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [serviceLabel, setServiceLabel] = useState('Services');
+  const [runningTimer, setRunningTimer] = useState<ActivityEntry | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerTickRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Redirect if not admin or loading finished
@@ -85,6 +95,56 @@ export default function AdminLayout({
     }
   }, [user]);
 
+  // Real-time listener for running activity timer
+  useEffect(() => {
+    if (!user) return;
+    const q = query(
+      collection(db, 'activityEntries'),
+      where('userId', '==', user.uid),
+      where('isRunning', '==', true),
+      limit(1)
+    );
+    const unsub = onSnapshot(q, snap => {
+      if (snap.empty) {
+        setRunningTimer(null);
+      } else {
+        const d = snap.docs[0];
+        setRunningTimer({ id: d.id, ...d.data() } as ActivityEntry);
+      }
+    });
+    return () => unsub();
+  }, [user]);
+
+  // Tick elapsed seconds for active timer
+  useEffect(() => {
+    if (timerTickRef.current) clearInterval(timerTickRef.current);
+    if (runningTimer && !runningTimer.isPaused) {
+      timerTickRef.current = setInterval(() => {
+        setElapsedSeconds(getElapsedSeconds(runningTimer));
+      }, 1000);
+    } else if (runningTimer?.isPaused) {
+      setElapsedSeconds(Math.floor(runningTimer.accumulatedMs / 1000));
+    } else {
+      setElapsedSeconds(0);
+    }
+    return () => { if (timerTickRef.current) clearInterval(timerTickRef.current); };
+  }, [runningTimer]);
+
+  const handleTimerPause = async () => {
+    if (!runningTimer || runningTimer.isPaused) return;
+    await pauseTimer(runningTimer.id, runningTimer);
+  };
+
+  const handleTimerResume = async () => {
+    if (!runningTimer || !runningTimer.isPaused) return;
+    await resumeTimer(runningTimer.id);
+  };
+
+  const handleTimerStop = async () => {
+    if (!runningTimer) return;
+    await stopTimer(runningTimer.id, runningTimer);
+  };
+
   // Show nothing while loading or if not admin
   if (loading || !user || ![UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(user.role)) {
     return null;
@@ -107,16 +167,27 @@ export default function AdminLayout({
         }`}
       >
         {/* Logo/Brand */}
-        <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200">
-          <Link href="/admin" className="text-xl font-bold text-primary-600">
-            Admin Panel
-          </Link>
-          <button
-            onClick={() => setIsSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
-          >
-            <XMarkIcon className="h-6 w-6 text-gray-600" />
-          </button>
+        <div className={`flex flex-col border-b border-gray-200 ${runningTimer ? '' : 'h-16 justify-center'}`}>
+          <div className="flex items-center justify-between px-6 h-16">
+            <Link href="/admin" className="text-xl font-bold text-primary-600">
+              Admin Panel
+            </Link>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+            >
+              <XMarkIcon className="h-6 w-6 text-gray-600" />
+            </button>
+          </div>
+          {runningTimer && (
+            <SidebarTimerWidget
+              timer={runningTimer}
+              elapsedSeconds={elapsedSeconds}
+              onPause={handleTimerPause}
+              onResume={handleTimerResume}
+              onStop={handleTimerStop}
+            />
+          )}
         </div>
 
         {/* Navigation */}
@@ -142,6 +213,41 @@ export default function AdminLayout({
                 Messages
               </NavLink>
             </div>
+
+            {/* CRM Section */}
+            <div className="pt-4 pb-2 px-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                CRM
+              </p>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/prospects" icon={UserGroupIcon}>
+                Prospects
+              </NavLink>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/activity" icon={ClockIcon}>
+                Activity Tracker
+              </NavLink>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/projects" icon={FolderIcon}>
+                Projects
+              </NavLink>
+            </div>
+
+            {/* Job Search Section */}
+            <div className="pt-4 pb-2 px-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Job Search
+              </p>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/applications" icon={BriefcaseIcon}>
+                Applications
+              </NavLink>
+            </div>
+
             <div onClick={() => setIsSidebarOpen(false)}>
               <NavLink href="/admin/services" icon={CubeIcon}>
                 {serviceLabel}
@@ -254,21 +360,90 @@ export default function AdminLayout({
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         {/* Mobile Header */}
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-100"
-          >
-            <Bars3Icon className="h-6 w-6 text-gray-600" />
-          </button>
-          <h1 className="text-lg font-semibold text-gray-900">Admin Panel</h1>
-          <div className="w-10"></div> {/* Spacer for centering */}
+        <div className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-30">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 rounded-lg hover:bg-gray-100"
+            >
+              <Bars3Icon className="h-6 w-6 text-gray-600" />
+            </button>
+            <h1 className="text-lg font-semibold text-gray-900">Admin Panel</h1>
+            <div className="w-10" />
+          </div>
+          {runningTimer && (
+            <div className={`px-4 py-2 border-t ${runningTimer.isPaused ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'}`}>
+              <SidebarTimerWidget
+                timer={runningTimer}
+                elapsedSeconds={elapsedSeconds}
+                onPause={handleTimerPause}
+                onResume={handleTimerResume}
+                onStop={handleTimerStop}
+                compact
+              />
+            </div>
+          )}
         </div>
 
         <div className="p-4 lg:p-8">
           {children}
         </div>
       </main>
+    </div>
+  );
+}
+
+interface SidebarTimerWidgetProps {
+  timer: ActivityEntry;
+  elapsedSeconds: number;
+  onPause: () => void;
+  onResume: () => void;
+  onStop: () => void;
+  compact?: boolean;
+}
+
+function SidebarTimerWidget({ timer, elapsedSeconds, onPause, onResume, onStop, compact }: SidebarTimerWidgetProps) {
+  const isPaused = timer.isPaused;
+  return (
+    <div className={`${compact ? '' : `mx-3 mb-3 rounded-lg px-3 py-2 ${isPaused ? 'bg-amber-50' : 'bg-green-50'}`}`}>
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isPaused ? 'bg-amber-500' : 'bg-green-500 animate-pulse'}`} />
+        <span className="text-sm font-medium text-gray-900 truncate flex-1 min-w-0">
+          {timer.title}
+        </span>
+      </div>
+      <div className="flex items-center justify-between mt-1">
+        <span className={`font-mono text-sm font-bold ${isPaused ? 'text-amber-700' : 'text-green-700'}`}>
+          {formatElapsed(elapsedSeconds)}
+          {isPaused && <span className="text-xs font-normal ml-1 text-amber-600">(paused)</span>}
+        </span>
+        <div className="flex items-center gap-1">
+          {isPaused ? (
+            <button
+              onClick={onResume}
+              className="p-1 rounded hover:bg-white/60 text-amber-700 transition-colors"
+              title="Resume"
+            >
+              <PlayIconSolid className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={onPause}
+              className="p-1 rounded hover:bg-white/60 text-green-700 transition-colors"
+              title="Pause"
+            >
+              <PauseIcon className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button
+            onClick={onStop}
+            className="p-1 rounded hover:bg-white/60 text-red-600 transition-colors"
+            title="Stop"
+          >
+            <StopIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
