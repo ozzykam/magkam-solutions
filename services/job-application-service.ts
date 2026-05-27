@@ -82,8 +82,11 @@ export const updateJobApplication = async (
   updates: Partial<Omit<JobApplication, 'id' | 'createdAt' | 'createdBy' | 'notes'>>
 ): Promise<void> => {
   try {
+    const sanitized = Object.fromEntries(
+      Object.entries(updates).filter(([, v]) => v !== undefined)
+    );
     await updateDoc(doc(db, COLLECTION, id), {
-      ...updates,
+      ...sanitized,
       updatedAt: Timestamp.now(),
     });
   } catch (error) {
