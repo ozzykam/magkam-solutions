@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import {
+  Proposal,
   LineItem,
   ProposalStatus,
   ClientInfo,
@@ -101,15 +102,15 @@ export default function NewProposalPage() {
     setLineItems(lineItems.filter((item) => item.id !== id));
   };
 
-  const updateLineItem = (id: string, field: keyof LineItem, value: any) => {
+  const updateLineItem = (id: string, field: keyof LineItem, value: LineItem[keyof LineItem]) => {
     setLineItems(
       lineItems.map((item) => {
         if (item.id === id) {
           const updated = { ...item, [field]: value };
           if (field === 'quantity' || field === 'rate') {
             updated.amount = calculateLineItemAmount(
-              field === 'quantity' ? value : updated.quantity,
-              field === 'rate' ? value : updated.rate
+              field === 'quantity' ? Number(value) : updated.quantity,
+              field === 'rate' ? Number(value) : updated.rate
             );
           }
           return updated;
@@ -140,7 +141,7 @@ export default function NewProposalPage() {
       setSaving(true);
 
       // Build proposal data, only including defined fields
-      const proposalData: any = {
+      const proposalData: Record<string, unknown> = {
         status,
         client: clientInfo,
         lineItems,
@@ -181,7 +182,10 @@ export default function NewProposalPage() {
         proposalData.sentAt = Timestamp.now();
       }
 
-      const proposalId = await createProposal(proposalData, user.uid);
+      const proposalId = await createProposal(
+        proposalData as Omit<Proposal, 'id' | 'proposalNumber' | 'createdAt' | 'updatedAt' | 'createdBy'>,
+        user.uid
+      );
 
       alert(`Proposal ${status === ProposalStatus.SENT ? 'created and sent' : 'saved as draft'}!`);
       router.push(`/admin/proposals/${proposalId}`);
@@ -264,7 +268,7 @@ export default function NewProposalPage() {
           </div>
 
           <div className="space-y-4">
-            {lineItems.map((item, index) => (
+            {lineItems.map((item) => (
               <div key={item.id} className="grid grid-cols-12 gap-3 items-end">
                 <div className="col-span-12 md:col-span-5">
                   <label className="block text-sm font-medium text-gray-700 mb-2">

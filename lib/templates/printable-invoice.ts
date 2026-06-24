@@ -22,9 +22,11 @@ export function generatePrintableInvoice(invoice: Invoice, businessInfo: {
     }).format(amount);
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: { toDate?: () => Date } | string | number | null | undefined) => {
     if (!timestamp) return '';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = typeof timestamp === 'object' && 'toDate' in timestamp && timestamp.toDate
+      ? timestamp.toDate()
+      : new Date(timestamp as string | number);
     return date.toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',

@@ -100,15 +100,15 @@ export default function CustomerSelector({ onSelectCustomer, initialData }: Cust
 
     // Populate client info from selected customer
     // Handle both 'addresses' (array) and 'address' (map) structures
-    const customerAny = customer as any;
+    const customerExtra = customer as unknown as Record<string, unknown>;
     const defaultAddress = customer.addresses?.find(addr => addr.isDefault)
       || customer.addresses?.[0]
-      || customerAny.address; // Fallback to singular 'address' map
+      || customerExtra.address as typeof customer.addresses[0] | undefined;
 
     const customerData: ClientInfo = {
       name: customer.name,
       email: customer.email,
-      company: customerAny.businessName || '', // Use businessName if available
+      company: typeof customerExtra.businessName === 'string' ? customerExtra.businessName : '', // Use businessName if available
       phone: customer.phone || '',
       address: defaultAddress ? {
         street: defaultAddress.street || '',
@@ -137,7 +137,7 @@ export default function CustomerSelector({ onSelectCustomer, initialData }: Cust
         [addressField]: value,
       };
     } else {
-      (updatedInfo as any)[field] = value;
+      (updatedInfo as Record<string, unknown>)[field] = value;
     }
 
     setClientInfo(updatedInfo);

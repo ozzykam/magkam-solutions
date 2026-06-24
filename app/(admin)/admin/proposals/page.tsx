@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Proposal, ProposalStatus } from '@/types/invoice';
 import { getProposals, deleteProposal, markProposalAsSent } from '@/services/invoice-service';
 import Card from '@/components/ui/Card';
@@ -122,9 +121,11 @@ export default function ProposalsPage() {
     }).format(amount);
   };
 
-  const formatDate = (timestamp: any) => {
+  const formatDate = (timestamp: { toDate?: () => Date } | string | number | null | undefined) => {
     if (!timestamp) return 'N/A';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const date = typeof timestamp === 'object' && 'toDate' in timestamp && timestamp.toDate
+      ? timestamp.toDate()
+      : new Date(timestamp as string | number);
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',

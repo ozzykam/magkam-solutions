@@ -4,7 +4,6 @@ import { Invoice } from '@/types/invoice';
 import { generatePrintableInvoice } from '@/lib/templates/printable-invoice';
 import { getStoreSettings } from '@/services/business-info-service';
 import { getUserRole, getAuthUserId } from '@/lib/auth-helpers';
-import { verifyIdToken } from '@/lib/firebase/admin';
 
 /**
  * GET - Generate printable/downloadable invoice

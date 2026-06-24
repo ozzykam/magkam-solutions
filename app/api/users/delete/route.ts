@@ -35,9 +35,12 @@ export async function DELETE(request: NextRequest) {
       const auth = getAdminAuth();
       await auth.deleteUser(userId);
       console.log(`Deleted user ${userId} from Firebase Auth`);
-    } catch (authError: any) {
+    } catch (authError) {
       // If user doesn't exist in Auth, that's okay (already deleted or never existed)
-      if (authError.code === 'auth/user-not-found') {
+      const code = authError instanceof Error && 'code' in authError
+        ? (authError as { code: string }).code
+        : '';
+      if (code === 'auth/user-not-found') {
         console.log(`User ${userId} not found in Firebase Auth (may have been already deleted)`);
       } else {
         throw authError;
@@ -48,10 +51,10 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'User deleted successfully from both Firestore and Auth',
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting user:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to delete user' },
+      { error: error instanceof Error ? error.message : 'Failed to delete user' },
       { status: 500 }
     );
   }

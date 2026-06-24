@@ -72,8 +72,8 @@ export default function CustomerProposalsPage() {
       return false;
     }
     const validUntil = typeof proposal.validUntil === 'object' && 'toDate' in proposal.validUntil 
-      ? (proposal.validUntil as any).toDate() 
-      : new Date(proposal.validUntil as any);
+      ? (proposal.validUntil as { toDate: () => Date }).toDate()
+      : new Date(proposal.validUntil as string | number);
     const threeDaysFromNow = new Date();
     threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
     return validUntil <= threeDaysFromNow && validUntil >= new Date();

@@ -148,7 +148,7 @@ export default function EditInvoicePage() {
     }
   };
 
-  const updateLineItem = (id: string, field: keyof LineItem, value: any) => {
+  const updateLineItem = (id: string, field: keyof LineItem, value: LineItem[keyof LineItem]) => {
     setLineItems(
       lineItems.map((item) => {
         if (item.id === id) {
@@ -211,13 +211,27 @@ export default function EditInvoicePage() {
     try {
       setSaving(true);
 
+      // Build client object with optional fields
+      const clientData: Record<string, unknown> = {
+        name: clientInfo.name,
+        email: clientInfo.email,
+      };
+      if (clientInfo.company) clientData.company = clientInfo.company;
+      if (clientInfo.phone) clientData.phone = clientInfo.phone;
+      if (clientInfo.address && (clientInfo.address.street || clientInfo.address.city)) {
+        clientData.address = clientInfo.address;
+      }
+
+      // Build discount object with optional reason
+      const discountData: Record<string, unknown> | null =
+        enableDiscount && discountAmount > 0
+          ? { type: discountType, value: discountValue, ...(discountReason ? { reason: discountReason } : {}) }
+          : null;
+
       // Build update data conditionally to avoid undefined values
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         status,
-        client: {
-          name: clientInfo.name,
-          email: clientInfo.email,
-        },
+        client: clientData,
         lineItems,
         subtotal: subtotal,
         taxAmount: taxAmount,
@@ -240,30 +254,14 @@ export default function EditInvoicePage() {
         updateData.description = null;
       }
 
-      if (clientInfo.company) {
-        updateData.client.company = clientInfo.company;
-      }
-      if (clientInfo.phone) {
-        updateData.client.phone = clientInfo.phone;
-      }
-      if (clientInfo.address && (clientInfo.address.street || clientInfo.address.city)) {
-        updateData.client.address = clientInfo.address;
-      }
-
       if (enableTax) {
         updateData.taxConfig = taxConfig;
       } else if (invoice.taxConfig) {
         updateData.taxConfig = null;
       }
 
-      if (enableDiscount && discountAmount > 0) {
-        updateData.discount = {
-          type: discountType,
-          value: discountValue,
-        };
-        if (discountReason) {
-          updateData.discount.reason = discountReason;
-        }
+      if (discountData) {
+        updateData.discount = discountData;
       } else if (invoice.discount) {
         updateData.discount = null;
       }

@@ -43,7 +43,6 @@ import {
   StopIcon,
   PlayIcon,
   PauseIcon,
-  CalendarIcon,
   LinkIcon,
 } from '@heroicons/react/24/outline';
 import { collection, getDocs, query, orderBy as fbOrderBy } from 'firebase/firestore';
@@ -360,11 +359,6 @@ export default function ActivityPage() {
     }
   };
 
-  const formatEntryDate = (ts: Timestamp) =>
-    ts.toDate().toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
-      hour: 'numeric', minute: '2-digit',
-    });
 
   if (loading) {
     return (

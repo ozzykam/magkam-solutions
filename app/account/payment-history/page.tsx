@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
-import { Invoice, PaymentInfo } from '@/types/invoice';
+import { PaymentInfo } from '@/types/invoice';
 import { getInvoices } from '@/services/invoice-service';
 import Card from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';

@@ -3,14 +3,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { getProspects } from '@/services/prospect-service';
 import { getActivityStats, getActivities, formatDuration } from '@/services/activity-service';
 import { getProjects } from '@/services/project-service';
-import { getTodos, createTodo, toggleTodo, deleteTodo } from '@/services/todo-service';
+import { createTodo, toggleTodo, deleteTodo } from '@/services/todo-service';
 import { getUnreadMessageCount } from '@/services/contact-message-service';
 import {
   collection,
@@ -20,7 +19,6 @@ import {
   limit,
   getDocs,
   onSnapshot,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import {
@@ -33,7 +31,6 @@ import {
 import {
   Project,
   ProjectStatus,
-  PROJECT_STATUS_COLORS,
   PROJECT_PRIORITY_COLORS,
   PROJECT_PRIORITY_LABELS,
 } from '@/types/project';

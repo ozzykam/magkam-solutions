@@ -79,9 +79,10 @@ export async function GET(request: NextRequest) {
         customer: customerId,
         type: 'card',
       });
-    } catch (error: any) {
+    } catch (error) {
       // Handle case where customer ID is from test mode but we're in live mode
-      if (error.code === 'resource_missing' && error.param === 'customer') {
+      const stripeErr = error as { code?: string; param?: string };
+      if (stripeErr.code === 'resource_missing' && stripeErr.param === 'customer') {
         console.log('[Payment Methods API] Customer not found (likely test mode ID in live mode), clearing and recreating...');
 
         // Clear the invalid customer ID from Firestore

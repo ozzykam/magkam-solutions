@@ -4,6 +4,7 @@ import { getAdminFirestore } from '@/lib/firebase/admin';
 import { Invoice, InvoiceStatus, PaymentInfo } from '@/types/invoice';
 import Stripe from 'stripe';
 import { Timestamp as AdminTimestamp } from 'firebase-admin/firestore';
+import { Timestamp as ClientTimestamp } from 'firebase/firestore';
 
 // Disable body parsing for webhooks
 export const runtime = 'nodejs';
@@ -28,10 +29,11 @@ export async function POST(request: NextRequest) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (error: any) {
-    console.error('Webhook signature verification failed:', error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Webhook signature verification failed:', message);
     return NextResponse.json(
-      { error: `Webhook Error: ${error.message}` },
+      { error: `Webhook Error: ${message}` },
       { status: 400 }
     );
   }
@@ -101,7 +103,7 @@ export async function POST(request: NextRequest) {
           totalPaid: invoiceAmount + processingFee, // Total amount customer actually paid
           paymentMethod: 'card',
           transactionNote: `Stripe card payment${processingFee > 0 ? ` (includes $${processingFee.toFixed(2)} processing fee)` : ''}`,
-          paidAt: AdminTimestamp.now() as any,
+          paidAt: AdminTimestamp.now() as unknown as ClientTimestamp,
           cardBrand,
           cardLast4,
         };
@@ -122,7 +124,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Update invoice
-        const updates: any = {
+        const updates: Record<string, unknown> = {
           payments: updatedPayments,
           amountPaid: totalPaid,
           amountDue: amountDue,
@@ -243,8 +245,8 @@ export async function POST(request: NextRequest) {
 
         for (const invoiceDoc of invoicesSnapshot.docs) {
           const invoice = invoiceDoc.data();
-          const hasPayment = invoice.payments?.some(
-            (p: any) => p.stripePaymentIntentId === paymentIntentId
+          const hasPayment = (invoice.payments as Array<{ stripePaymentIntentId?: string }> | undefined)?.some(
+            (p) => p.stripePaymentIntentId === paymentIntentId
           );
 
           if (hasPayment) {
@@ -282,7 +284,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error processing webhook:', error);
     return NextResponse.json(
       { error: 'Webhook handler failed' },

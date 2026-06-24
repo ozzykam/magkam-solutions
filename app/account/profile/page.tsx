@@ -124,9 +124,10 @@ export default function ProfilePage() {
       }
 
       alert('Profile updated successfully!');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      alert('Failed to update profile: ' + message);
     } finally {
       setSaving(false);
     }
@@ -159,9 +160,10 @@ export default function ProfilePage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error changing password:', error);
-      alert(error.message || 'Failed to change password');
+      const message = error instanceof Error ? error.message : 'Failed to change password';
+      alert(message);
     } finally {
       setChangingPassword(false);
     }

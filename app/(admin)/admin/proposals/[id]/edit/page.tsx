@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import {
+  Proposal,
   LineItem,
   ProposalStatus,
   ClientInfo,
@@ -148,15 +149,15 @@ export default function EditProposalPage() {
     setLineItems(lineItems.filter((item) => item.id !== id));
   };
 
-  const updateLineItem = (id: string, field: keyof LineItem, value: any) => {
+  const updateLineItem = (id: string, field: keyof LineItem, value: LineItem[keyof LineItem]) => {
     setLineItems(
       lineItems.map((item) => {
         if (item.id === id) {
           const updated = { ...item, [field]: value };
           if (field === 'quantity' || field === 'rate') {
             updated.amount = calculateLineItemAmount(
-              field === 'quantity' ? value : updated.quantity,
-              field === 'rate' ? value : updated.rate
+              field === 'quantity' ? Number(value) : updated.quantity,
+              field === 'rate' ? Number(value) : updated.rate
             );
           }
           return updated;
@@ -187,7 +188,7 @@ export default function EditProposalPage() {
       setSaving(true);
 
       // Build proposal update data, only including defined fields
-      const updates: any = {
+      const updates: Record<string, unknown> = {
         client: clientInfo,
         lineItems,
         subtotal: subtotal,
@@ -239,7 +240,10 @@ export default function EditProposalPage() {
         updates.validUntil = null;
       }
 
-      await updateProposal(params.id as string, updates);
+      await updateProposal(
+        params.id as string,
+        updates as Partial<Omit<Proposal, 'id' | 'proposalNumber' | 'createdAt' | 'createdBy'>>
+      );
 
       alert('Proposal updated successfully!');
       router.push(`/admin/proposals/${params.id}`);

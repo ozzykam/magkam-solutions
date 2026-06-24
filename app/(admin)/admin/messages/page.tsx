@@ -352,7 +352,7 @@ export default function MessagesPage() {
               <p className="text-gray-500 italic line-clamp-2">{convertMessage.subject}</p>
             </div>
             <p className="text-xs text-gray-500">
-              The prospect will be created with status "New" and source "Contact Form".
+              The prospect will be created with status &quot;New&quot; and source &quot;Contact Form&quot;.
               You can update details from the Prospects page.
             </p>
             <div className="flex justify-end gap-3">
