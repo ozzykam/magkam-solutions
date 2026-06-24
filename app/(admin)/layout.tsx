@@ -32,6 +32,7 @@ import {
   UserGroupIcon,
   FolderIcon,
   BriefcaseIcon,
+  ArchiveBoxIcon,
 } from '@heroicons/react/24/outline';
 import { PauseIcon, StopIcon, PlayIcon as PlayIconSolid } from '@heroicons/react/24/solid';
 
@@ -199,12 +200,12 @@ export default function AdminLayout({
               </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/proposals" icon={CurrencyDollarIcon} badge={unreadCount > 0 ? unreadCount : undefined}>
+              <NavLink href="/admin/proposals" icon={CurrencyDollarIcon}>
                 Proposals
               </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
-              <NavLink href="/admin/invoices" icon={CurrencyDollarIcon} badge={unreadCount > 0 ? unreadCount : undefined}>
+              <NavLink href="/admin/invoices" icon={CurrencyDollarIcon}>
                 Invoices
               </NavLink>
             </div>
@@ -245,6 +246,11 @@ export default function AdminLayout({
             <div onClick={() => setIsSidebarOpen(false)}>
               <NavLink href="/admin/applications" icon={BriefcaseIcon}>
                 Applications
+              </NavLink>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/documents" icon={ArchiveBoxIcon}>
+                Sales Documents
               </NavLink>
             </div>
 

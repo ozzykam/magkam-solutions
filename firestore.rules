@@ -404,5 +404,10 @@ service cloud.firestore {
     match /jobApplications/{appId} {
       allow read, write: if isAdmin();
     }
+
+    // Sales documents collection (admin only - resumes, flyers, business cards, etc.)
+    match /salesDocuments/{documentId} {
+      allow read, write: if isAdmin();
+    }
   }
 }
