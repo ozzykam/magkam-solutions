@@ -7,9 +7,9 @@ import ServiceCalculator from '@/components/calculators/ServiceCalculator';
 import { SerializedCalculator } from '@/types/calculator';
 
 interface CalculatorPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 /**
@@ -18,7 +18,8 @@ interface CalculatorPageProps {
 export async function generateMetadata({
   params,
 }: CalculatorPageProps): Promise<Metadata> {
-  const calculator = await getCalculatorBySlug(params.slug);
+  const { slug } = await params;
+  const calculator = await getCalculatorBySlug(slug);
 
   if (!calculator) {
     return {
@@ -46,8 +47,8 @@ export async function generateMetadata({
  * Returns 404 if calculator doesn't exist or is inactive
  */
 export default async function CalculatorPage({ params }: CalculatorPageProps) {
-  // Fetch calculator from Firestore
-  const calculator = await getCalculatorBySlug(params.slug);
+  const { slug } = await params;
+  const calculator = await getCalculatorBySlug(slug);
 
   // Show 404 if calculator not found or inactive
   if (!calculator) {
