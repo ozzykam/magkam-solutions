@@ -70,7 +70,7 @@ export interface ProcessingFeeConfig {
  * 3% surcharge for credit card payments to cover Stripe fees (2.9% + $0.30)
  */
 export const DEFAULT_PROCESSING_FEE: ProcessingFeeConfig = {
-  enabled: true,
+  enabled: false,
   cardFeePercent: 3,
   feeLabel: 'Credit Card Processing Fee',
 };
