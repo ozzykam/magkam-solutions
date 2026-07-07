@@ -19,8 +19,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Local Market - Fresh, Local Services",
-  description: "Shop fresh, local services from your neighborhood market",
+  title: "MagKam Solutions",
+  description: "Innovation That Delivers Reliable Growth",
 };
 
 export default function RootLayout({

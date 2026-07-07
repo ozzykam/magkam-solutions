@@ -130,10 +130,10 @@ export function generateOrderStatusEmail(data: OrderStatusData): string {
           <tr>
             <td style="padding: 32px; background-color: #f9fafb; border-radius: 0 0 8px 8px; text-align: center;">
               <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px;">
-                Local Market - Fresh, Local Products
+                MagKam Solutions - Innovation That Delivers Reliable Growth
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                © ${new Date().getFullYear()} Local Market. All rights reserved.
+                © ${new Date().getFullYear()} MagKam Solutions. All rights reserved.
               </p>
             </td>
           </tr>
