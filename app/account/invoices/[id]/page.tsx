@@ -268,7 +268,7 @@ export default function CustomerInvoiceDetailPage() {
                 <span className="font-medium">{formatCurrency(remainingBalance)}</span>
               </div>
               <div className="flex justify-between text-gray-700">
-                <span>Processing Fee (3%):</span>
+                <span>Processing Fee (0%):</span>
                 <span className="font-medium">
                   {formatCurrency(calculateProcessingFee(remainingBalance, invoice.processingFeeConfig || DEFAULT_PROCESSING_FEE))}
                 </span>
