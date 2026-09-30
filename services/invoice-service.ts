@@ -42,12 +42,26 @@ const COUNTERS_COLLECTION = 'counters';
 export const getProposals = async (filters?: {
   status?: ProposalStatus;
   clientEmail?: string;
+  linkedClientId?: string;
+  linkedProjectId?: string;
 }): Promise<Proposal[]> => {
   try {
     let q;
 
     // Build query with filters
-    if (filters?.clientEmail && filters?.status) {
+    if (filters?.linkedClientId) {
+      q = query(
+        collection(db, PROPOSALS_COLLECTION),
+        where('linkedClientId', '==', filters.linkedClientId),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (filters?.linkedProjectId) {
+      q = query(
+        collection(db, PROPOSALS_COLLECTION),
+        where('linkedProjectId', '==', filters.linkedProjectId),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (filters?.clientEmail && filters?.status) {
       // Both email and status filters
       q = query(
         collection(db, PROPOSALS_COLLECTION),
@@ -371,12 +385,26 @@ export const rejectProposal = async (id: string): Promise<void> => {
 export const getInvoices = async (filters?: {
   status?: InvoiceStatus;
   clientEmail?: string;
+  linkedClientId?: string;
+  linkedProjectId?: string;
 }): Promise<Invoice[]> => {
   try {
     let q;
 
     // Build query with filters
-    if (filters?.clientEmail && filters?.status) {
+    if (filters?.linkedClientId) {
+      q = query(
+        collection(db, INVOICES_COLLECTION),
+        where('linkedClientId', '==', filters.linkedClientId),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (filters?.linkedProjectId) {
+      q = query(
+        collection(db, INVOICES_COLLECTION),
+        where('linkedProjectId', '==', filters.linkedProjectId),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (filters?.clientEmail && filters?.status) {
       // Both email and status filters
       q = query(
         collection(db, INVOICES_COLLECTION),
@@ -684,6 +712,10 @@ export const convertProposalToInvoice = async (
     const invoiceData: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt'> = {
       status: InvoiceStatus.DRAFT,
       client: proposal.client,
+      ...(proposal.linkedClientId && { linkedClientId: proposal.linkedClientId }),
+      ...(proposal.linkedClientName && { linkedClientName: proposal.linkedClientName }),
+      ...(proposal.linkedProjectId && { linkedProjectId: proposal.linkedProjectId }),
+      ...(proposal.linkedProjectName && { linkedProjectName: proposal.linkedProjectName }),
       lineItems: proposal.lineItems,
       subtotal: proposal.subtotal,
       taxConfig: proposal.taxConfig,

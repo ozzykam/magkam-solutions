@@ -3,6 +3,7 @@ export * from './services';
 export * from './calculator';
 export * from './activity';
 export * from './prospect';
+export * from './client';
 export * from './project';
 export * from './todo';
 export * from './job-application';

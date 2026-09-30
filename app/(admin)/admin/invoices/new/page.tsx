@@ -1,9 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { InvoiceStatus, LineItem, ClientInfo, TaxConfig, Invoice } from '@/types/invoice';
 import { createInvoice } from '@/services/invoice-service';
+import { getClients } from '@/services/client-service';
+import { getProjects } from '@/services/project-service';
+import { Client } from '@/types/client';
+import { Project } from '@/types/project';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { Timestamp } from 'firebase/firestore';
 import Card from '@/components/ui/Card';
@@ -15,6 +19,25 @@ export default function NewInvoicePage() {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // CRM Client / Project linkage (separate from the client-name/email fields below)
+  const [clients, setClients] = useState<Client[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [linkedClientId, setLinkedClientId] = useState('');
+  const [linkedProjectId, setLinkedProjectId] = useState('');
+
+  useEffect(() => {
+    getClients().then(setClients).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!linkedClientId) {
+      setProjects([]);
+      setLinkedProjectId('');
+      return;
+    }
+    getProjects({ linkedClientId }).then(setProjects).catch(() => {});
+  }, [linkedClientId]);
 
   // Invoice basic info
   const [title, setTitle] = useState('');
@@ -204,6 +227,16 @@ export default function NewInvoicePage() {
       if (notes) {
         invoiceData.notes = notes;
       }
+      if (linkedClientId) {
+        const linkedClient = clients.find(c => c.id === linkedClientId);
+        invoiceData.linkedClientId = linkedClientId;
+        invoiceData.linkedClientName = linkedClient?.name || '';
+      }
+      if (linkedProjectId) {
+        const linkedProject = projects.find(p => p.id === linkedProjectId);
+        invoiceData.linkedProjectId = linkedProjectId;
+        invoiceData.linkedProjectName = linkedProject?.name || '';
+      }
 
       const invoiceId = await createInvoice(invoiceData, user.uid);
       router.push(`/admin/invoices/${invoiceId}`);
@@ -291,6 +324,35 @@ export default function NewInvoicePage() {
         {/* Client Information */}
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Client Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pb-4 border-b">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Link to Client (CRM)</label>
+              <select
+                value={linkedClientId}
+                onChange={e => setLinkedClientId(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="">None</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}{c.company ? ` (${c.company})` : ''}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Link to Project</label>
+              <select
+                value={linkedProjectId}
+                onChange={e => setLinkedProjectId(e.target.value)}
+                disabled={!linkedClientId}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                <option value="">None</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Client Name"

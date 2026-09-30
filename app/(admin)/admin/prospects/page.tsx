@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -17,6 +19,7 @@ import {
   deleteProspect,
   addProspectNote,
 } from '@/services/prospect-service';
+import { convertProspectToClient } from '@/services/client-service';
 import {
   Prospect,
   ProspectStatus,
@@ -45,6 +48,8 @@ import {
   ViewColumnsIcon,
   ListBulletIcon,
   ChevronRightIcon,
+  ArrowRightCircleIcon,
+  LockClosedIcon,
 } from '@heroicons/react/24/outline';
 
 type ViewMode = 'list' | 'kanban';
@@ -62,6 +67,7 @@ const KANBAN_COLUMNS: ProspectStatus[] = [
 export default function ProspectsPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const router = useRouter();
 
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,6 +146,10 @@ export default function ProspectsPage() {
   });
 
   const openFormModal = (prospect?: Prospect) => {
+    if (prospect?.archived) {
+      showToast('This prospect is archived and read-only', 'error');
+      return;
+    }
     if (prospect) {
       setEditingProspect(prospect);
       setFormName(prospect.name);
@@ -212,6 +222,10 @@ export default function ProspectsPage() {
   };
 
   const handleDelete = async (prospect: Prospect) => {
+    if (prospect.archived) {
+      showToast('This prospect is archived and read-only', 'error');
+      return;
+    }
     if (!confirm(`Delete "${prospect.name}"? This cannot be undone.`)) return;
     try {
       await deleteProspect(prospect.id);
@@ -226,6 +240,10 @@ export default function ProspectsPage() {
   };
 
   const handleStatusChange = async (prospect: Prospect, newStatus: ProspectStatus) => {
+    if (prospect.archived) {
+      showToast('This prospect is archived and read-only', 'error');
+      return;
+    }
     try {
       await updateProspectStatus(prospect.id, newStatus);
       setProspects(prev =>
@@ -241,6 +259,10 @@ export default function ProspectsPage() {
 
   const handleAddNote = async () => {
     if (!user || !selectedProspect || !newNoteText.trim()) return;
+    if (selectedProspect.archived) {
+      showToast('This prospect is archived and read-only', 'error');
+      return;
+    }
     setIsSavingNote(true);
     try {
       await addProspectNote(selectedProspect.id, newNoteText.trim(), user.uid, user.name);
@@ -258,6 +280,19 @@ export default function ProspectsPage() {
     }
   };
 
+  const handleConvertToClient = async (prospect: Prospect) => {
+    if (!user) return;
+    if (!confirm(`Convert "${prospect.name}" to a Client? The prospect record will become read-only.`)) return;
+    try {
+      const clientId = await convertProspectToClient(prospect.id, {}, user.uid);
+      showToast('Prospect converted to Client', 'success');
+      setShowDetailModal(false);
+      router.push(`/admin/clients/${clientId}`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to convert prospect', 'error');
+    }
+  };
+
   // Kanban drag-and-drop
   const handleDragStart = (prospectId: string) => setDraggedId(prospectId);
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
@@ -265,7 +300,7 @@ export default function ProspectsPage() {
     e.preventDefault();
     if (!draggedId) return;
     const prospect = prospects.find(p => p.id === draggedId);
-    if (!prospect || prospect.status === targetStatus) {
+    if (!prospect || prospect.archived || prospect.status === targetStatus) {
       setDraggedId(null);
       return;
     }
@@ -411,7 +446,10 @@ export default function ProspectsPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {filteredProspects.map(prospect => (
-                      <tr key={prospect.id} className="hover:bg-gray-50 transition-colors">
+                      <tr
+                        key={prospect.id}
+                        className={`hover:bg-gray-50 transition-colors ${prospect.archived ? 'opacity-60 bg-gray-50' : ''}`}
+                      >
                         {/* Name */}
                         <td className="px-4 py-3 max-w-xs">
                           <p className="font-medium text-gray-900 truncate">{prospect.name}</p>
@@ -443,6 +481,9 @@ export default function ProspectsPage() {
                             </Badge>
                             {isFollowUpOverdue(prospect) && (
                               <Badge variant="error" size="sm">Overdue</Badge>
+                            )}
+                            {prospect.archived && (
+                              <Badge variant="default" size="sm">Archived</Badge>
                             )}
                           </div>
                         </td>
@@ -487,20 +528,33 @@ export default function ProspectsPage() {
                             >
                               <EyeIcon className="h-4 w-4" />
                             </button>
-                            <button
-                              onClick={() => openFormModal(prospect)}
-                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                              title="Edit"
-                            >
-                              <PencilIcon className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(prospect)}
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                              title="Delete"
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </button>
+                            {!prospect.archived && (
+                              <>
+                                <button
+                                  onClick={() => openFormModal(prospect)}
+                                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                  title="Edit"
+                                >
+                                  <PencilIcon className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(prospect)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                  title="Delete"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
+                            {prospect.status === ProspectStatus.WON && !prospect.archived && (
+                              <button
+                                onClick={() => handleConvertToClient(prospect)}
+                                className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                                title="Convert to Client"
+                              >
+                                <ArrowRightCircleIcon className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -550,12 +604,12 @@ export default function ProspectsPage() {
                     {columnProspects.map(prospect => (
                       <div
                         key={prospect.id}
-                        draggable
+                        draggable={!prospect.archived}
                         onDragStart={() => handleDragStart(prospect.id)}
                         onDragEnd={() => setDraggedId(null)}
-                        className={`bg-white rounded-lg border p-3 cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-shadow ${
-                          draggedId === prospect.id ? 'opacity-50' : ''
-                        }`}
+                        className={`bg-white rounded-lg border p-3 shadow-sm hover:shadow-md transition-shadow ${
+                          prospect.archived ? 'opacity-60' : 'cursor-grab active:cursor-grabbing'
+                        } ${draggedId === prospect.id ? 'opacity-50' : ''}`}
                       >
                         <div className="flex items-start justify-between gap-1">
                           <div className="flex-1 min-w-0">
@@ -578,6 +632,12 @@ export default function ProspectsPage() {
                         )}
                         {isFollowUpOverdue(prospect) && (
                           <p className="text-xs text-red-600 mt-1">Follow-up overdue</p>
+                        )}
+                        {prospect.archived && (
+                          <div className="flex items-center gap-1 mt-1.5 text-xs text-gray-500">
+                            <LockClosedIcon className="h-3 w-3" />
+                            Archived
+                          </div>
                         )}
                         {prospect.notes.length > 0 && (
                           <div className="flex items-center gap-1 mt-1.5 text-xs text-gray-400">
@@ -607,6 +667,23 @@ export default function ProspectsPage() {
       >
         {selectedProspect && (
           <div className="space-y-5">
+            {selectedProspect.archived && (
+              <div className="bg-gray-100 border border-gray-300 rounded-lg p-3 flex items-center gap-2 text-sm text-gray-600">
+                <LockClosedIcon className="h-4 w-4 flex-shrink-0" />
+                <span>
+                  This prospect was converted to a Client
+                  {selectedProspect.archivedAt ? ` on ${formatDate(selectedProspect.archivedAt)}` : ''} and is now read-only.
+                </span>
+                {selectedProspect.convertedClientId && (
+                  <Link
+                    href={`/admin/clients/${selectedProspect.convertedClientId}`}
+                    className="underline font-medium whitespace-nowrap"
+                  >
+                    View Client →
+                  </Link>
+                )}
+              </div>
+            )}
             {/* Contact info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -642,15 +719,23 @@ export default function ProspectsPage() {
               <div className="space-y-3">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Status</p>
-                  <select
-                    value={selectedProspect.status}
-                    onChange={e => handleStatusChange(selectedProspect, e.target.value as ProspectStatus)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    {Object.values(ProspectStatus).map(s => (
-                      <option key={s} value={s}>{PROSPECT_STATUS_LABELS[s]}</option>
-                    ))}
-                  </select>
+                  {selectedProspect.archived ? (
+                    <Badge
+                      variant={PROSPECT_STATUS_COLORS[selectedProspect.status] as Parameters<typeof Badge>[0]['variant']}
+                    >
+                      {PROSPECT_STATUS_LABELS[selectedProspect.status]}
+                    </Badge>
+                  ) : (
+                    <select
+                      value={selectedProspect.status}
+                      onChange={e => handleStatusChange(selectedProspect, e.target.value as ProspectStatus)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      {Object.values(ProspectStatus).map(s => (
+                        <option key={s} value={s}>{PROSPECT_STATUS_LABELS[s]}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
@@ -737,35 +822,39 @@ export default function ProspectsPage() {
                 )}
               </div>
               {/* Add note */}
-              <div className="flex gap-2">
-                <textarea
-                  value={newNoteText}
-                  onChange={e => setNewNoteText(e.target.value)}
-                  placeholder="Add a note..."
-                  rows={2}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
-                />
-                <Button
-                  size="sm"
-                  onClick={handleAddNote}
-                  loading={isSavingNote}
-                  disabled={!newNoteText.trim()}
-                >
-                  Add
-                </Button>
-              </div>
+              {!selectedProspect.archived && (
+                <div className="flex gap-2">
+                  <textarea
+                    value={newNoteText}
+                    onChange={e => setNewNoteText(e.target.value)}
+                    placeholder="Add a note..."
+                    rows={2}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleAddNote}
+                    loading={isSavingNote}
+                    disabled={!newNoteText.trim()}
+                  >
+                    Add
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
             <div className="flex gap-3 border-t pt-4">
-              <Button
-                variant="outline"
-                onClick={() => { setShowDetailModal(false); openFormModal(selectedProspect); }}
-                leftIcon={<PencilIcon className="h-4 w-4" />}
-                fullWidth
-              >
-                Edit
-              </Button>
+              {!selectedProspect.archived && (
+                <Button
+                  variant="outline"
+                  onClick={() => { setShowDetailModal(false); openFormModal(selectedProspect); }}
+                  leftIcon={<PencilIcon className="h-4 w-4" />}
+                  fullWidth
+                >
+                  Edit
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => window.location.href = `mailto:${selectedProspect.email}`}
@@ -774,15 +863,37 @@ export default function ProspectsPage() {
               >
                 Email
               </Button>
+              {!selectedProspect.archived && (
+                <Button
+                  variant="danger"
+                  onClick={() => handleDelete(selectedProspect)}
+                  leftIcon={<TrashIcon className="h-4 w-4" />}
+                  fullWidth
+                >
+                  Delete
+                </Button>
+              )}
+            </div>
+            {selectedProspect.status === ProspectStatus.WON && !selectedProspect.archived && (
               <Button
-                variant="danger"
-                onClick={() => handleDelete(selectedProspect)}
-                leftIcon={<TrashIcon className="h-4 w-4" />}
+                variant="primary"
+                onClick={() => handleConvertToClient(selectedProspect)}
+                leftIcon={<ArrowRightCircleIcon className="h-4 w-4" />}
                 fullWidth
               >
-                Delete
+                Convert to Client
               </Button>
-            </div>
+            )}
+            {selectedProspect.archived && selectedProspect.convertedClientId && (
+              <Button
+                variant="primary"
+                onClick={() => router.push(`/admin/clients/${selectedProspect.convertedClientId}`)}
+                leftIcon={<ArrowRightCircleIcon className="h-4 w-4" />}
+                fullWidth
+              >
+                View Client
+              </Button>
+            )}
           </div>
         )}
       </Modal>

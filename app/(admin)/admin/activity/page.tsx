@@ -25,6 +25,8 @@ import {
   getElapsedSeconds,
 } from '@/services/activity-service';
 import { getProspects } from '@/services/prospect-service';
+import { getClients } from '@/services/client-service';
+import { getProjects } from '@/services/project-service';
 import {
   ActivityEntry,
   ActivityCategory,
@@ -34,6 +36,8 @@ import {
   ACTIVITY_CATEGORY_COLORS,
 } from '@/types/activity';
 import { Prospect } from '@/types/prospect';
+import { Client } from '@/types/client';
+import { Project } from '@/types/project';
 import { Timestamp } from 'firebase/firestore';
 import {
   ClockIcon,
@@ -85,12 +89,15 @@ export default function ActivityPage() {
   const [formMinutes, setFormMinutes] = useState('30');
   const [formDate, setFormDate] = useState(new Date().toISOString().split('T')[0]);
   const [formTime, setFormTime] = useState(new Date().toTimeString().slice(0, 5));
-  const [formLinkedType, setFormLinkedType] = useState<'none' | 'prospect' | 'proposal' | 'invoice'>('none');
+  const [formLinkedType, setFormLinkedType] = useState<'none' | 'prospect' | 'client' | 'project' | 'proposal' | 'invoice'>('none');
   const [formLinkedId, setFormLinkedId] = useState('');
+  const [formClientProjectId, setFormClientProjectId] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   // Linked items for dropdowns
   const [prospects, setProspects] = useState<Prospect[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [proposals, setProposals] = useState<{ id: string; title: string }[]>([]);
   const [invoices, setInvoices] = useState<{ id: string; invoiceNumber: string }[]>([]);
 
@@ -118,12 +125,16 @@ export default function ActivityPage() {
 
   const loadLinkableItems = useCallback(async () => {
     try {
-      const [prospectList, proposalSnap, invoiceSnap] = await Promise.all([
+      const [prospectList, clientList, projectList, proposalSnap, invoiceSnap] = await Promise.all([
         getProspects(),
+        getClients(),
+        getProjects(),
         getDocs(query(collection(db, 'proposals'), fbOrderBy('createdAt', 'desc'))),
         getDocs(query(collection(db, 'invoices'), fbOrderBy('createdAt', 'desc'))),
       ]);
       setProspects(prospectList);
+      setClients(clientList);
+      setProjects(projectList);
       setProposals(
         proposalSnap.docs.map(d => ({
           id: d.id,
@@ -203,9 +214,17 @@ export default function ActivityPage() {
       setFormDate(d.toISOString().split('T')[0]);
       setFormTime(d.toTimeString().slice(0, 5));
       setLogMode('duration');
+      setFormClientProjectId('');
       if (entry.linkedProspectId) {
         setFormLinkedType('prospect');
         setFormLinkedId(entry.linkedProspectId);
+      } else if (entry.linkedClientId) {
+        setFormLinkedType('client');
+        setFormLinkedId(entry.linkedClientId);
+        setFormClientProjectId(entry.linkedProjectId || '');
+      } else if (entry.linkedProjectId) {
+        setFormLinkedType('project');
+        setFormLinkedId(entry.linkedProjectId);
       } else if (entry.linkedProposalId) {
         setFormLinkedType('proposal');
         setFormLinkedId(entry.linkedProposalId);
@@ -227,6 +246,7 @@ export default function ActivityPage() {
       setFormTime(new Date().toTimeString().slice(0, 5));
       setFormLinkedType('none');
       setFormLinkedId('');
+      setFormClientProjectId('');
       setLogMode('duration');
     }
     setShowLogModal(true);
@@ -236,6 +256,19 @@ export default function ActivityPage() {
     if (formLinkedType === 'prospect' && formLinkedId) {
       const p = prospects.find(x => x.id === formLinkedId);
       return { linkedProspectId: formLinkedId, linkedProspectName: p?.name || '' };
+    }
+    if (formLinkedType === 'client' && formLinkedId) {
+      const c = clients.find(x => x.id === formLinkedId);
+      const proj = projects.find(x => x.id === formClientProjectId);
+      return {
+        linkedClientId: formLinkedId,
+        linkedClientName: c?.name || '',
+        ...(proj && { linkedProjectId: proj.id, linkedProjectName: proj.name }),
+      };
+    }
+    if (formLinkedType === 'project' && formLinkedId) {
+      const proj = projects.find(x => x.id === formLinkedId);
+      return { linkedProjectId: formLinkedId, linkedProjectName: proj?.name || '' };
     }
     if (formLinkedType === 'proposal' && formLinkedId) {
       const p = proposals.find(x => x.id === formLinkedId);
@@ -264,6 +297,10 @@ export default function ActivityPage() {
           description: formDescription.trim(),
           linkedProspectId: undefined,
           linkedProspectName: undefined,
+          linkedClientId: undefined,
+          linkedClientName: undefined,
+          linkedProjectId: undefined,
+          linkedProjectName: undefined,
           linkedProposalId: undefined,
           linkedProposalTitle: undefined,
           linkedInvoiceId: undefined,
@@ -371,10 +408,19 @@ export default function ActivityPage() {
   const linkedItemOptions =
     formLinkedType === 'prospect'
       ? prospects.map(p => ({ id: p.id, label: `${p.name}${p.company ? ` (${p.company})` : ''}` }))
+      : formLinkedType === 'client'
+      ? clients.map(c => ({ id: c.id, label: `${c.name}${c.company ? ` (${c.company})` : ''}` }))
+      : formLinkedType === 'project'
+      ? projects.map(p => ({ id: p.id, label: p.name }))
       : formLinkedType === 'proposal'
       ? proposals.map(p => ({ id: p.id, label: p.title }))
       : formLinkedType === 'invoice'
       ? invoices.map(i => ({ id: i.id, label: i.invoiceNumber }))
+      : [];
+
+  const clientProjectOptions =
+    formLinkedType === 'client' && formLinkedId
+      ? projects.filter(p => p.linkedClientId === formLinkedId)
       : [];
 
   return (
@@ -801,18 +847,24 @@ export default function ActivityPage() {
                 onChange={e => {
                   setFormLinkedType(e.target.value as typeof formLinkedType);
                   setFormLinkedId('');
+                  setFormClientProjectId('');
                 }}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="none">None</option>
                 <option value="prospect">Prospect</option>
+                <option value="client">Client</option>
+                <option value="project">Project</option>
                 <option value="proposal">Proposal</option>
                 <option value="invoice">Invoice</option>
               </select>
               {formLinkedType !== 'none' && (
                 <select
                   value={formLinkedId}
-                  onChange={e => setFormLinkedId(e.target.value)}
+                  onChange={e => {
+                    setFormLinkedId(e.target.value);
+                    setFormClientProjectId('');
+                  }}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="">Select {formLinkedType}…</option>
@@ -822,6 +874,21 @@ export default function ActivityPage() {
                 </select>
               )}
             </div>
+            {formLinkedType === 'client' && formLinkedId && clientProjectOptions.length > 0 && (
+              <div className="mt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Project (optional)</label>
+                <select
+                  value={formClientProjectId}
+                  onChange={e => setFormClientProjectId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">All projects for this client</option>
+                  {clientProjectOptions.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

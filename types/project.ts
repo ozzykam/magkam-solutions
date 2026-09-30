@@ -58,6 +58,23 @@ export const PROJECT_PRIORITY_COLORS: Record<ProjectPriority, string> = {
   [ProjectPriority.URGENT]: 'error',
 };
 
+/**
+ * A single manually-logged payment/installment against a Project's declared scope.
+ * Used ONLY when the project has no linked formal Invoice — see the Client/Project
+ * financial rollup rule: a project is billed through either its linked Invoices OR
+ * this manual ledger, never both, to avoid double-counting.
+ */
+export interface ProjectPayment {
+  id: string;
+  amount: number;
+  paidAt: Timestamp;
+  method?: 'card' | 'ach' | 'bank_transfer' | 'check' | 'cash' | 'wire' | 'other';
+  note?: string;
+  recordedBy: string;
+  recordedByName: string;
+  createdAt: Timestamp;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -70,6 +87,10 @@ export interface Project {
   progress: number;
   linkedProspectId?: string;
   linkedProspectName?: string;
+  linkedClientId?: string;
+  linkedClientName?: string;
+  scopeAmount?: number; // manually-declared/contracted total value of this project
+  payments: ProjectPayment[]; // manual installment/down-payment log (see ProjectPayment doc)
   createdAt: Timestamp;
   updatedAt: Timestamp;
   createdBy: string;
@@ -86,4 +107,14 @@ export interface CreateProjectData {
   progress: number;
   linkedProspectId?: string;
   linkedProspectName?: string;
+  linkedClientId?: string;
+  linkedClientName?: string;
+  scopeAmount?: number;
 }
+
+/**
+ * Helper to sum a project's manually-logged payments
+ */
+export const calculateProjectAmountPaid = (payments: ProjectPayment[]): number => {
+  return (payments || []).reduce((sum, p) => sum + p.amount, 0);
+};

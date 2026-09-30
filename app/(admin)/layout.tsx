@@ -30,6 +30,7 @@ import {
   CurrencyDollarIcon,
   ClockIcon,
   UserGroupIcon,
+  BuildingOffice2Icon,
   FolderIcon,
   BriefcaseIcon,
   ArchiveBoxIcon,
@@ -220,6 +221,11 @@ export default function AdminLayout({
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 CRM
               </p>
+            </div>
+            <div onClick={() => setIsSidebarOpen(false)}>
+              <NavLink href="/admin/clients" icon={BuildingOffice2Icon}>
+                Clients
+              </NavLink>
             </div>
             <div onClick={() => setIsSidebarOpen(false)}>
               <NavLink href="/admin/prospects" icon={UserGroupIcon}>

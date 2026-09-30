@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -13,6 +13,10 @@ import {
   calculateTotal,
 } from '@/types/invoice';
 import { createProposal } from '@/services/invoice-service';
+import { getClients } from '@/services/client-service';
+import { getProjects } from '@/services/project-service';
+import { Client } from '@/types/client';
+import { Project } from '@/types/project';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -24,6 +28,25 @@ export default function NewProposalPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+
+  // CRM Client / Project linkage (separate from the portal-auth clientId below)
+  const [clients, setClients] = useState<Client[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [linkedClientId, setLinkedClientId] = useState('');
+  const [linkedProjectId, setLinkedProjectId] = useState('');
+
+  useEffect(() => {
+    getClients().then(setClients).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!linkedClientId) {
+      setProjects([]);
+      setLinkedProjectId('');
+      return;
+    }
+    getProjects({ linkedClientId }).then(setProjects).catch(() => {});
+  }, [linkedClientId]);
 
   // Client Information
   const [clientId, setClientId] = useState<string | null>(null);
@@ -156,6 +179,18 @@ export default function NewProposalPage() {
         proposalData.clientId = clientId;
       }
 
+      // CRM Client / Project linkage (unrelated to the portal-auth clientId above)
+      if (linkedClientId) {
+        const linkedClient = clients.find(c => c.id === linkedClientId);
+        proposalData.linkedClientId = linkedClientId;
+        proposalData.linkedClientName = linkedClient?.name || '';
+      }
+      if (linkedProjectId) {
+        const linkedProject = projects.find(p => p.id === linkedProjectId);
+        proposalData.linkedProjectId = linkedProjectId;
+        proposalData.linkedProjectName = linkedProject?.name || '';
+      }
+
       // Only add optional fields if they have values
       if (enableTax) {
         proposalData.taxConfig = taxConfig;
@@ -223,6 +258,35 @@ export default function NewProposalPage() {
             }}
             initialData={clientInfo}
           />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Link to Client (CRM)</label>
+              <select
+                value={linkedClientId}
+                onChange={e => setLinkedClientId(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="">None</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}{c.company ? ` (${c.company})` : ''}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Link to Project</label>
+              <select
+                value={linkedProjectId}
+                onChange={e => setLinkedProjectId(e.target.value)}
+                disabled={!linkedClientId}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:text-gray-400"
+              >
+                <option value="">None</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       </Card>
 

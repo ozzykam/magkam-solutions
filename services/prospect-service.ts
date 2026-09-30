@@ -10,6 +10,7 @@ import {
   orderBy,
   Timestamp,
   arrayUnion,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import {
@@ -80,8 +81,14 @@ export const updateProspect = async (
   updates: Partial<Omit<Prospect, 'id' | 'createdAt' | 'createdBy' | 'notes'>>
 ): Promise<void> => {
   try {
+    // Firestore's updateDoc() rejects explicit `undefined` values (e.g. a cleared
+    // optional field like estimatedValue or nextFollowUpAt) — convert those to
+    // deleteField() instead.
+    const sanitized = Object.fromEntries(
+      Object.entries(updates).map(([key, value]) => [key, value === undefined ? deleteField() : value])
+    );
     await updateDoc(doc(db, COLLECTION, id), {
-      ...updates,
+      ...sanitized,
       updatedAt: Timestamp.now(),
     });
   } catch (error) {

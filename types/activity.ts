@@ -47,6 +47,10 @@ export interface ActivityEntry {
   accumulatedMs: number;
   linkedProspectId?: string;
   linkedProspectName?: string;
+  linkedClientId?: string;
+  linkedClientName?: string;
+  linkedProjectId?: string;
+  linkedProjectName?: string;
   linkedProposalId?: string;
   linkedProposalTitle?: string;
   linkedInvoiceId?: string;
@@ -63,6 +67,10 @@ export interface CreateActivityData {
   startTime: Timestamp;
   linkedProspectId?: string;
   linkedProspectName?: string;
+  linkedClientId?: string;
+  linkedClientName?: string;
+  linkedProjectId?: string;
+  linkedProjectName?: string;
   linkedProposalId?: string;
   linkedProposalTitle?: string;
   linkedInvoiceId?: string;

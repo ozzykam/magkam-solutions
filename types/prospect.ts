@@ -83,6 +83,11 @@ export interface Prospect {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   createdBy: string;
+
+  // Set only by conversion to a Client — makes the prospect permanently read-only in the UI
+  archived?: boolean;
+  archivedAt?: Timestamp;
+  convertedClientId?: string;
 }
 
 export interface CreateProspectData {

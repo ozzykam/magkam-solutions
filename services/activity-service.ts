@@ -10,6 +10,7 @@ import {
   orderBy,
   limit,
   Timestamp,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import {
@@ -55,6 +56,10 @@ export const createActivity = async (
       accumulatedMs: 0,
       ...(data.linkedProspectId && { linkedProspectId: data.linkedProspectId }),
       ...(data.linkedProspectName && { linkedProspectName: data.linkedProspectName }),
+      ...(data.linkedClientId && { linkedClientId: data.linkedClientId }),
+      ...(data.linkedClientName && { linkedClientName: data.linkedClientName }),
+      ...(data.linkedProjectId && { linkedProjectId: data.linkedProjectId }),
+      ...(data.linkedProjectName && { linkedProjectName: data.linkedProjectName }),
       ...(data.linkedProposalId && { linkedProposalId: data.linkedProposalId }),
       ...(data.linkedProposalTitle && { linkedProposalTitle: data.linkedProposalTitle }),
       ...(data.linkedInvoiceId && { linkedInvoiceId: data.linkedInvoiceId }),
@@ -91,6 +96,10 @@ export const startTimer = async (
       accumulatedMs: 0,
       ...(data.linkedProspectId && { linkedProspectId: data.linkedProspectId }),
       ...(data.linkedProspectName && { linkedProspectName: data.linkedProspectName }),
+      ...(data.linkedClientId && { linkedClientId: data.linkedClientId }),
+      ...(data.linkedClientName && { linkedClientName: data.linkedClientName }),
+      ...(data.linkedProjectId && { linkedProjectId: data.linkedProjectId }),
+      ...(data.linkedProjectName && { linkedProjectName: data.linkedProjectName }),
       ...(data.linkedProposalId && { linkedProposalId: data.linkedProposalId }),
       ...(data.linkedProposalTitle && { linkedProposalTitle: data.linkedProposalTitle }),
       ...(data.linkedInvoiceId && { linkedInvoiceId: data.linkedInvoiceId }),
@@ -196,6 +205,41 @@ export const getActivities = async (
   }
 };
 
+/**
+ * Cross-user activity queries for the Client/Project 360 views.
+ * Separate from getActivities(userId, ...), which is hard-scoped to one user
+ * and backs the per-admin Activity Tracker page + sidebar timer widget.
+ */
+export const getActivitiesByLinkedClient = async (clientId: string): Promise<ActivityEntry[]> => {
+  try {
+    const q = query(
+      collection(db, COLLECTION),
+      where('linkedClientId', '==', clientId),
+      orderBy('startTime', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as ActivityEntry[];
+  } catch (error) {
+    console.error('Error fetching activities by client:', error);
+    throw error;
+  }
+};
+
+export const getActivitiesByLinkedProject = async (projectId: string): Promise<ActivityEntry[]> => {
+  try {
+    const q = query(
+      collection(db, COLLECTION),
+      where('linkedProjectId', '==', projectId),
+      orderBy('startTime', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as ActivityEntry[];
+  } catch (error) {
+    console.error('Error fetching activities by project:', error);
+    throw error;
+  }
+};
+
 export const getRunningTimer = async (userId: string): Promise<ActivityEntry | null> => {
   try {
     const q = query(
@@ -219,8 +263,15 @@ export const updateActivity = async (
   updates: Partial<Omit<ActivityEntry, 'id' | 'userId' | 'createdAt'>>
 ): Promise<void> => {
   try {
+    // Firestore's updateDoc() rejects explicit `undefined` values. Callers use `undefined`
+    // to mean "clear this field" (e.g. resetting linked-item fields before applying a new
+    // link) — convert those to deleteField() so that intent actually takes effect instead
+    // of crashing or silently leaving the stale value in place.
+    const sanitized = Object.fromEntries(
+      Object.entries(updates).map(([key, value]) => [key, value === undefined ? deleteField() : value])
+    );
     await updateDoc(doc(db, COLLECTION, id), {
-      ...updates,
+      ...sanitized,
       updatedAt: Timestamp.now(),
     });
   } catch (error) {

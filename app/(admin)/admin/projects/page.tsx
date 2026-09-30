@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -16,6 +17,7 @@ import {
   deleteProject,
 } from '@/services/project-service';
 import { getProspects } from '@/services/prospect-service';
+import { getClients } from '@/services/client-service';
 import {
   Project,
   ProjectStatus,
@@ -29,10 +31,12 @@ import {
   PROJECT_PRIORITY_COLORS,
 } from '@/types/project';
 import { Prospect } from '@/types/prospect';
+import { Client } from '@/types/client';
 import { Timestamp } from 'firebase/firestore';
 import {
   PlusIcon,
   FolderIcon,
+  EyeIcon,
   PencilIcon,
   TrashIcon,
   MagnifyingGlassIcon,
@@ -55,9 +59,11 @@ function deadlineClass(deadline: Timestamp, status: ProjectStatus): string {
 export default function ProjectsPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const router = useRouter();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [prospects, setProspects] = useState<Prospect[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,17 +84,21 @@ export default function ProjectsPage() {
   const [formStartDate, setFormStartDate] = useState('');
   const [formProgress, setFormProgress] = useState(0);
   const [formLinkedProspectId, setFormLinkedProspectId] = useState('');
+  const [formLinkedClientId, setFormLinkedClientId] = useState('');
+  const [formScopeAmount, setFormScopeAmount] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [projectList, prospectList] = await Promise.all([
+      const [projectList, prospectList, clientList] = await Promise.all([
         getProjects(),
         getProspects(),
+        getClients(),
       ]);
       setProjects(projectList);
       setProspects(prospectList);
+      setClients(clientList);
     } catch {
       showToast('Failed to load projects', 'error');
     } finally {
@@ -138,6 +148,8 @@ export default function ProjectsPage() {
       setFormStartDate(project.startDate ? project.startDate.toDate().toISOString().split('T')[0] : '');
       setFormProgress(project.progress);
       setFormLinkedProspectId(project.linkedProspectId || '');
+      setFormLinkedClientId(project.linkedClientId || '');
+      setFormScopeAmount(project.scopeAmount !== undefined ? String(project.scopeAmount) : '');
     } else {
       setEditingProject(null);
       setFormName('');
@@ -149,6 +161,8 @@ export default function ProjectsPage() {
       setFormStartDate('');
       setFormProgress(0);
       setFormLinkedProspectId('');
+      setFormLinkedClientId('');
+      setFormScopeAmount('');
     }
     setShowModal(true);
   };
@@ -161,6 +175,7 @@ export default function ProjectsPage() {
     setIsSaving(true);
     try {
       const linkedProspect = prospects.find(p => p.id === formLinkedProspectId);
+      const linkedClient = clients.find(c => c.id === formLinkedClientId);
       const data: CreateProjectData = {
         name: formName.trim(),
         description: formDescription.trim(),
@@ -171,6 +186,8 @@ export default function ProjectsPage() {
         progress: formProgress,
         ...(formStartDate && { startDate: Timestamp.fromDate(new Date(formStartDate)) }),
         ...(formLinkedProspectId && { linkedProspectId: formLinkedProspectId, linkedProspectName: linkedProspect?.name || '' }),
+        ...(formLinkedClientId && { linkedClientId: formLinkedClientId, linkedClientName: linkedClient?.name || '' }),
+        ...(formScopeAmount && { scopeAmount: parseFloat(formScopeAmount) }),
       };
 
       if (editingProject) {
@@ -374,12 +391,19 @@ export default function ProjectsPage() {
 
                     {/* Client */}
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
-                      {project.linkedProspectName || <span className="text-gray-300">—</span>}
+                      {project.linkedClientName || project.linkedProspectName || <span className="text-gray-300">—</span>}
                     </td>
 
                     {/* Actions */}
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => router.push(`/admin/projects/${project.id}`)}
+                          className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                          title="View details"
+                        >
+                          <EyeIcon className="h-4 w-4" />
+                        </button>
                         <button
                           onClick={() => openModal(project)}
                           className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
@@ -478,6 +502,20 @@ export default function ProjectsPage() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Link to Client</label>
+              <select
+                value={formLinkedClientId}
+                onChange={e => setFormLinkedClientId(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="">None</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}{c.company ? ` (${c.company})` : ''}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Link to Prospect</label>
               <select
                 value={formLinkedProspectId}
@@ -489,6 +527,17 @@ export default function ProjectsPage() {
                   <option key={p.id} value={p.id}>{p.name}{p.company ? ` (${p.company})` : ''}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Scope Amount ($)</label>
+              <Input
+                type="number"
+                value={formScopeAmount}
+                onChange={e => setFormScopeAmount(e.target.value)}
+                placeholder="0"
+                min="0"
+              />
             </div>
 
             <div>

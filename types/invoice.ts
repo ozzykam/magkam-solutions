@@ -131,8 +131,12 @@ export interface Proposal {
   status: ProposalStatus;
 
   // Client Information
-  clientId?: string; // Reference to user in users collection (if customer has account)
+  clientId?: string; // Reference to user in users collection (if customer has account) — portal-auth matching ONLY
   client: ClientInfo; // Denormalized client data (snapshot at time of creation)
+  linkedClientId?: string; // Reference to a CRM Client record (types/client.ts) — unrelated to clientId above
+  linkedClientName?: string; // Denormalized display name for the linked Client
+  linkedProjectId?: string; // Reference to a CRM Project record (types/project.ts)
+  linkedProjectName?: string; // Denormalized display name for the linked Project
 
   // Line Items
   lineItems: LineItem[];
@@ -182,8 +186,12 @@ export interface Invoice {
   status: InvoiceStatus;
 
   // Client Information
-  clientId?: string; // Reference to user in users collection (if customer has account)
+  clientId?: string; // Reference to user in users collection (if customer has account) — portal-auth matching ONLY
   client: ClientInfo; // Denormalized client data (snapshot at time of creation)
+  linkedClientId?: string; // Reference to a CRM Client record (types/client.ts) — unrelated to clientId above
+  linkedClientName?: string; // Denormalized display name for the linked Client
+  linkedProjectId?: string; // Reference to a CRM Project record (types/project.ts)
+  linkedProjectName?: string; // Denormalized display name for the linked Project
 
   // Line Items
   lineItems: LineItem[];
