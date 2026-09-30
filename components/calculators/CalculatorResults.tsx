@@ -15,6 +15,7 @@ interface CalculatorResultsProps {
   totalPrice: number;
   lineItems: LineItem[];
   contactName: string;
+  preview?: boolean;
 }
 
 /**
@@ -33,6 +34,7 @@ export default function CalculatorResults({
   totalPrice,
   lineItems,
   contactName,
+  preview = false,
 }: CalculatorResultsProps) {
   return (
     <div className="max-w-4xl mx-auto">
@@ -44,7 +46,7 @@ export default function CalculatorResults({
             Thank You, {contactName}!
           </h2>
           <p className="text-gray-700">
-            Your custom estimate is ready. We&apos;ll reach out shortly to discuss your project in detail.
+            {preview ? 'Preview only. No lead was saved and no consultation was requested.' : 'Your custom estimate is ready. We\u0027ll reach out shortly to discuss your project in detail.'}
           </p>
         </div>
       </Card>

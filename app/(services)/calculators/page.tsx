@@ -1,3 +1,5 @@
+import { notFound } from 'next/navigation';
+import { calculatorsEnabled } from '@/lib/calculator-settings';
 import React from 'react';
 import Link from 'next/link';
 import Header from '@/components/layout/Header';
@@ -6,13 +8,16 @@ import { getCalculators } from '@/services/calculator-service';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Calculators',
   description: 'Use our free calculators to estimate project costs and timelines',
 };
 
 export default async function CalculatorsPage() {
-  const calculators = await getCalculators(); // Only get active calculators
+  if (!(await calculatorsEnabled())) notFound();
+  const calculators = await getCalculators(true);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -22,7 +27,7 @@ export default async function CalculatorsPage() {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Cost Calculatorss
+              Cost Calculators
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Get instant estimates for your project. Our calculators help you understand pricing and plan your budget.

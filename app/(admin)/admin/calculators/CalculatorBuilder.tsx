@@ -93,7 +93,7 @@ export default function CalculatorBuilder({
             Build your calculator by adding steps and configuring features
           </p>
         </div>
-        <Button onClick={addStep} size="sm">
+        <Button type="button" onClick={addStep} size="sm">
           + Add Step
         </Button>
       </div>
@@ -102,7 +102,7 @@ export default function CalculatorBuilder({
       {steps.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-gray-500 mb-4">No steps yet. Add your first step to get started!</p>
-          <Button onClick={addStep}>Add First Step</Button>
+          <Button type="button" onClick={addStep}>Add First Step</Button>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -110,6 +110,7 @@ export default function CalculatorBuilder({
             <StepBuilder
               key={step.id}
               step={step}
+              allFields={steps.flatMap(item => item.fields)}
               stepNumber={index + 1}
               totalSteps={steps.length}
               onChange={(updatedStep) => updateStep(index, updatedStep)}

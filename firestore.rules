@@ -185,8 +185,8 @@ service cloud.firestore {
       // Only admins can read messages
       allow read: if isAdmin();
 
-      // Anyone can create a contact message
-      allow create: if true;
+      // Calculator lead messages are written only by the validated server endpoint.
+      allow create: if request.resource.data.get('source', '') != 'calculator';
 
       // Only admins can update messages (mark as read, archive, etc.)
       allow update: if isAdmin();
@@ -294,8 +294,8 @@ service cloud.firestore {
 
     // Calculators collection
     match /calculators/{calculatorId} {
-      // Anyone can read active calculators (public tools)
-      allow read: if true;
+      // Public queries must request active calculators; admins can manage drafts.
+      allow read: if resource.data.isActive == true || isAdmin();
 
       // Only admins can create, update, or delete calculators
       allow create, update, delete: if isAdmin();
@@ -306,8 +306,8 @@ service cloud.firestore {
       // Only admins can read submissions
       allow read: if isAdmin();
 
-      // Anyone can create a submission (submitting the calculator)
-      allow create: if true;
+      // Submissions are validated and priced by the server using the Admin SDK.
+      allow create: if false;
 
       // Only admins can update submissions (change status)
       allow update: if isAdmin();

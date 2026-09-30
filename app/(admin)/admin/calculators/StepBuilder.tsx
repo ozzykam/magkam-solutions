@@ -15,6 +15,7 @@ interface StepBuilderProps {
   onMoveDown: () => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
+  allFields: (CalculatorFeature | CalculatorConfigField)[];
 }
 
 /**
@@ -33,6 +34,7 @@ export default function StepBuilder({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  allFields,
 }: StepBuilderProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showAddFieldMenu, setShowAddFieldMenu] = useState(false);
@@ -126,7 +128,7 @@ export default function StepBuilder({
       {/* Step Header */}
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3 flex-1">
-          <button
+          <button type="button"
             onClick={() => setIsExpanded(!isExpanded)}
             className="text-gray-500 hover:text-gray-700"
           >
@@ -142,7 +144,7 @@ export default function StepBuilder({
 
         {/* Step Controls */}
         <div className="flex gap-2">
-          <Button
+          <Button type="button"
             size="sm"
             variant="secondary"
             onClick={onMoveUp}
@@ -151,7 +153,7 @@ export default function StepBuilder({
           >
             ↑
           </Button>
-          <Button
+          <Button type="button"
             size="sm"
             variant="secondary"
             onClick={onMoveDown}
@@ -160,7 +162,7 @@ export default function StepBuilder({
           >
             ↓
           </Button>
-          <Button
+          <Button type="button"
             size="sm"
             variant="danger"
             onClick={onDelete}
@@ -204,7 +206,7 @@ export default function StepBuilder({
             <div className="flex justify-between items-center mb-3">
               <h5 className="font-medium">Fields & Features</h5>
               <div className="relative">
-                <Button
+                <Button type="button"
                   size="sm"
                   onClick={() => setShowAddFieldMenu(!showAddFieldMenu)}
                 >
@@ -214,7 +216,7 @@ export default function StepBuilder({
                 {/* Add Field Dropdown Menu */}
                 {showAddFieldMenu && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg z-10">
-                    <button
+                    <button type="button"
                       onClick={addConfigField}
                       className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b"
                     >
@@ -223,7 +225,7 @@ export default function StepBuilder({
                         Dropdown, number, or text input
                       </div>
                     </button>
-                    <button
+                    <button type="button"
                       onClick={addFeature}
                       className="w-full px-4 py-3 text-left hover:bg-gray-50"
                     >
@@ -240,7 +242,7 @@ export default function StepBuilder({
             {step.fields.length === 0 ? (
               <div className="text-center py-8 bg-gray-50 rounded-lg">
                 <p className="text-gray-500 text-sm">
-                  No fields yet. Click &wuot;Add Field&quot; to get started.
+                  No fields yet. Click &quot;Add Field&quot; to get started.
                 </p>
               </div>
             ) : (
@@ -249,6 +251,7 @@ export default function StepBuilder({
                   <FieldBuilder
                     key={'id' in field ? field.id : `field-${index}`}
                     field={field}
+                    allFields={allFields}
                     onChange={(updatedField) => updateField(index, updatedField)}
                     onDelete={() => deleteField(index)}
                     onMoveUp={() => moveFieldUp(index)}

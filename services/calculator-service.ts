@@ -13,7 +13,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Calculator, CalculatorSubmission } from '@/types/calculator';
-import { createContactMessage } from './contact-message-service';
+import type { CalculatorEstimate, CalculatorSubmissionRequest } from '@/types/calculator';
+import { prepareCalculator, validateCalculator } from '@/lib/calculator';
 
 const CALCULATORS_COLLECTION = 'calculators';
 const SUBMISSIONS_COLLECTION = 'calculatorSubmissions';
@@ -37,13 +38,13 @@ export const getCalculators = async (activeOnly = false): Promise<Calculator[]> 
     }
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    return snapshot.docs.map(doc => prepareCalculator({
       id: doc.id,
       ...doc.data(),
-    })) as Calculator[];
+    } as Calculator));
   } catch (error) {
     console.error('Error fetching calculators:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -59,10 +60,10 @@ export const getCalculatorById = async (id: string): Promise<Calculator | null> 
       return null;
     }
 
-    return {
+    return prepareCalculator({
       id: docSnap.id,
       ...docSnap.data(),
-    } as Calculator;
+    } as Calculator);
   } catch (error) {
     console.error('Error fetching calculator:', error);
     return null;
@@ -85,12 +86,13 @@ export const getCalculatorBySlug = async (slug: string): Promise<Calculator | nu
     if (snapshot.empty) {
       return null;
     }
+    if (snapshot.size !== 1) throw new Error('Multiple active calculators use this slug. Update their slugs in the editor.');
 
     const docSnap = snapshot.docs[0];
-    return {
+    return prepareCalculator({
       id: docSnap.id,
       ...docSnap.data(),
-    } as Calculator;
+    } as Calculator);
   } catch (error) {
     console.error('Error fetching calculator by slug:', error);
     return null;
@@ -105,6 +107,8 @@ export const createCalculator = async (
   userId: string
 ): Promise<string> => {
   try {
+    validateCalculator(calculator);
+    await assertUniqueSlug(calculator.slug);
     const docRef = doc(collection(db, CALCULATORS_COLLECTION));
     const now = Timestamp.now();
 
@@ -116,7 +120,7 @@ export const createCalculator = async (
       updatedAt: now,
     };
 
-    await setDoc(docRef, newCalculator);
+    await setDoc(docRef, { ...newCalculator, steps: JSON.parse(JSON.stringify(newCalculator.steps)) });
     return docRef.id;
   } catch (error) {
     console.error('Error creating calculator:', error);
@@ -133,8 +137,12 @@ export const updateCalculator = async (
 ): Promise<void> => {
   try {
     const docRef = doc(db, CALCULATORS_COLLECTION, id);
+    const existing = await getCalculatorById(id);
+    if (!existing) throw new Error('Calculator not found.');
+    validateCalculator({ ...existing, ...updates });
+    await assertUniqueSlug(updates.slug ?? existing.slug, id);
     await updateDoc(docRef, {
-      ...updates,
+      ...JSON.parse(JSON.stringify(updates)),
       updatedAt: Timestamp.now(),
     });
   } catch (error) {
@@ -161,7 +169,8 @@ export const deleteCalculator = async (id: string): Promise<void> => {
  */
 export const toggleCalculatorStatus = async (id: string, isActive: boolean): Promise<void> => {
   try {
-    await updateCalculator(id, { isActive });
+    if (isActive) await updateCalculator(id, { isActive });
+    else await updateDoc(doc(db, CALCULATORS_COLLECTION, id), { isActive: false, updatedAt: Timestamp.now() });
   } catch (error) {
     console.error('Error toggling calculator status:', error);
     throw error;
@@ -177,66 +186,16 @@ export const toggleCalculatorStatus = async (id: string, isActive: boolean): Pro
  * 2. Creates a contact message so admins are notified and can follow up
  */
 export const saveCalculatorSubmission = async (
-  submission: Omit<CalculatorSubmission, 'id' | 'submittedAt'>
-): Promise<string> => {
-  try {
-    const docRef = doc(collection(db, SUBMISSIONS_COLLECTION));
-
-    const newSubmission: CalculatorSubmission = {
-      ...submission,
-      id: docRef.id,
-      submittedAt: Timestamp.now(),
-    };
-
-    // Save the calculator submission
-    await setDoc(docRef, newSubmission);
-
-    // Create a contact message so this appears in the admin messages panel
-    if (submission.contactInfo?.email) {
-      // Format the selections as a readable message
-      const selectionsText = Object.entries(submission.selections)
-        .filter(([_, value]) => value !== false && value !== 0) // Only show selected features
-        .map(([key, value]) => {
-          if (typeof value === 'boolean') {
-            return `• ${key.replace(/_/g, ' ')}`;
-          }
-          return `• ${key.replace(/_/g, ' ')}: ${value}`;
-        })
-        .join('\n');
-
-      const message = `
-Calculator: ${submission.calculatorName}
-
-Selected Features:
-${selectionsText}
-
-Estimated Cost: $${submission.totalPrice.toLocaleString()}
-Total Hours: ${submission.totalHours}
-Hourly Rate: $${submission.hourlyRate}
-
-The customer has requested a consultation for their project.
-      `.trim();
-
-      await createContactMessage({
-        name: submission.contactInfo.name || 'Anonymous',
-        email: submission.contactInfo.email,
-        message,
-        subject: `Calculator Estimate Request - ${submission.calculatorName}`,
-        source: 'calculator',
-        metadata: {
-          calculatorId: submission.calculatorId,
-          submissionId: docRef.id,
-          totalPrice: submission.totalPrice,
-          totalHours: submission.totalHours,
-        },
-      });
-    }
-
-    return docRef.id;
-  } catch (error) {
-    console.error('Error saving calculator submission:', error);
-    throw error;
-  }
+  submission: CalculatorSubmissionRequest
+): Promise<{ id: string; estimate: CalculatorEstimate }> => {
+  const response = await fetch('/api/calculators/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(submission),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || 'Unable to save your estimate. Please try again.');
+  return result;
 };
 
 /**
@@ -259,7 +218,7 @@ export const getCalculatorSubmissions = async (
     })) as CalculatorSubmission[];
   } catch (error) {
     console.error('Error fetching calculator submissions:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -280,7 +239,7 @@ export const getAllSubmissions = async (): Promise<CalculatorSubmission[]> => {
     })) as CalculatorSubmission[];
   } catch (error) {
     console.error('Error fetching all submissions:', error);
-    return [];
+    throw error;
   }
 };
 
@@ -299,3 +258,15 @@ export const updateSubmissionStatus = async (
     throw error;
   }
 };
+
+async function assertUniqueSlug(slug: string, currentId?: string): Promise<void> {
+  const matches = await getDocs(query(collection(db, CALCULATORS_COLLECTION), where('slug', '==', slug)));
+  if (matches.docs.some(match => match.id !== currentId)) throw new Error('This calculator slug is already in use. Choose another slug.');
+}
+
+/** Resolve old service links that stored a document ID, as well as slug links. */
+export async function getActiveCalculatorForService(reference: string): Promise<Calculator | null> {
+  const byId = await getCalculatorById(reference);
+  if (byId) return byId.isActive ? byId : null;
+  return getCalculatorBySlug(reference);
+}

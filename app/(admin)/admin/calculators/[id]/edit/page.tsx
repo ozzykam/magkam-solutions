@@ -119,9 +119,10 @@ export default function EditCalculatorPage() {
         isActive,
         steps,
       });
+      router.push('/admin/calculators');
     } catch (error) {
       console.error('Error updating calculator:', error);
-      alert('Failed to update calculator. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to update calculator. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -246,6 +247,7 @@ export default function EditCalculatorPage() {
         {/* Hourly Rate Settings */}
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Hourly Rate Settings</h2>
+          <p className="text-sm text-gray-600 mb-4">All estimates use the default rate. Minimum and maximum values guard your rate setting; visitors cannot change it.</p>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -310,7 +312,6 @@ export default function EditCalculatorPage() {
           <Button 
             type="submit" 
             disabled={saving}
-            onClick={() => router.push('/admin/calculators')}
           >
             {saving ? 'Saving...' : 'Update Calculator'}
           </Button>

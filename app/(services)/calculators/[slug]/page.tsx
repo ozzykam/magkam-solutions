@@ -1,3 +1,4 @@
+import { calculatorsEnabled } from '@/lib/calculator-settings';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Header from '@/components/layout/Header';
@@ -5,6 +6,8 @@ import Footer from '@/components/layout/Footer';
 import { getCalculatorBySlug } from '@/services/calculator-service';
 import ServiceCalculator from '@/components/calculators/ServiceCalculator';
 import { SerializedCalculator } from '@/types/calculator';
+
+export const dynamic = 'force-dynamic';
 
 interface CalculatorPageProps {
   params: Promise<{
@@ -18,6 +21,7 @@ interface CalculatorPageProps {
 export async function generateMetadata({
   params,
 }: CalculatorPageProps): Promise<Metadata> {
+  if (!(await calculatorsEnabled())) notFound();
   const { slug } = await params;
   const calculator = await getCalculatorBySlug(slug);
 
@@ -47,6 +51,7 @@ export async function generateMetadata({
  * Returns 404 if calculator doesn't exist or is inactive
  */
 export default async function CalculatorPage({ params }: CalculatorPageProps) {
+  if (!(await calculatorsEnabled())) notFound();
   const { slug } = await params;
   const calculator = await getCalculatorBySlug(slug);
 

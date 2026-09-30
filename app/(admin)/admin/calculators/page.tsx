@@ -26,6 +26,7 @@ export default function CalculatorsAdminPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [calculatorToDelete, setCalculatorToDelete] = useState<Calculator | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
 
   /**
    * Load all calculators when component mounts
@@ -44,6 +45,7 @@ export default function CalculatorsAdminPage() {
       setCalculators(data);
     } catch (error) {
       console.error('Error loading calculators:', error);
+      setError('Could not load calculators. Please reload to try again.');
     } finally {
       setLoading(false);
     }
@@ -106,6 +108,8 @@ export default function CalculatorsAdminPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {error && <p role="alert" className="text-red-700 mb-4">{error}</p>}
+      <div className="flex gap-5 mb-5"><Link href="/admin/calculators/submissions" className="text-primary-600">View calculator leads</Link><Link href="/admin/features" className="text-primary-600">Calculator visibility settings</Link></div>
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -165,7 +169,7 @@ export default function CalculatorsAdminPage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 ml-4">
-                  <Link href={`/calculators/${calculator.slug}`} target="_blank">
+                  <Link href={`/admin/calculators/${calculator.id}/preview`}>
                     <Button variant="secondary" size="sm">
                       Preview
                     </Button>

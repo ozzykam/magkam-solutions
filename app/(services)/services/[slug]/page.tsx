@@ -12,6 +12,7 @@ import Badge from '@/components/ui/Badge';
 import { getServiceBySlug } from '@/services/services-service';
 import { getServiceReviews } from '@/services/review-service';
 import { getStoreSettings } from '@/services/business-info-service';
+import { getActiveCalculatorForService } from '@/services/calculator-service';
 import { getRelatedServices } from '@/lib/utils/service-helpers';
 import { getPricingDisplay, formatPrice, formatPriceParts, getPricingTypeBadgeColor, getPricingTypeLabel } from '@/lib/utils/pricing-helpers';
 import {
@@ -113,6 +114,8 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
   const settings = await getStoreSettings();
   const businessName = settings.businessName || 'Our Business';
   const serviceNamePlural = settings.serviceSettings?.serviceNamePlural || 'Services';
+  const linkedCalculator = settings.features?.calculators?.enabled && service.calculatorId
+    ? await getActiveCalculatorForService(service.calculatorId) : null;
 
   // Calculate pricing details
   const effectivePrice = getEffectivePrice(service);
@@ -283,8 +286,8 @@ export default async function ServiceDetailPage({ params }: ServiceDetailPagePro
                     Get a Quote
                   </Button>
                 </Link>
-                {hasCalculator(service) && service.calculatorId && (
-                  <Link href={`/calculators/${service.calculatorId}`} className="flex-1">
+                {hasCalculator(service) && linkedCalculator && (
+                  <Link href={`/calculators/${linkedCalculator.slug}`} className="flex-1">
                     <Button variant="outline" size="lg" className="w-full">
                       Calculate Price
                     </Button>

@@ -6,6 +6,18 @@ rules_version = '2';
         return request.auth != null;
       }
 
+      // Mirrors isAdmin() in firestore.rules
+      function isAdmin() {
+        return isSignedIn() &&
+          firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'];
+      }
+
+      // Image under 5MB (matches SingleImageUploader's client-side limit)
+      function isValidImage() {
+        return request.resource.size < 5 * 1024 * 1024 &&
+               request.resource.contentType.matches('image/.*');
+      }
+
       // Product images - Admin only (use server-side admin SDK for write operations)
       match /products/{imageId} {
         allow read: if true;
@@ -58,15 +70,15 @@ rules_version = '2';
       // Content images (blog posts, recipes, etc.) - Admin only
       match /content/{imageId} {
         allow read: if true;
-        // Write access should be done server-side with Admin SDK
-        allow write: if false;
+        allow create, update: if isAdmin() && isValidImage();
+        allow delete: if isAdmin();
       }
 
       // SEO images (Open Graph images, etc.) - Admin only
       match /seo/{imageId} {
         allow read: if true;
-        // Write access should be done server-side with Admin SDK
-        allow write: if false;
+        allow create, update: if isAdmin() && isValidImage();
+        allow delete: if isAdmin();
       }
 
       // User-specific uploads folder (properly scoped to user)
@@ -87,8 +99,8 @@ rules_version = '2';
       // Branding folder (logos, favicons) - Admin only
       match /branding/{folder}/{imageId} {
         allow read: if true;
-        // Write access should be done server-side with Admin SDK
-        allow write: if false;
+        allow create, update: if isAdmin() && isValidImage();
+        allow delete: if isAdmin();
       }
 
       // Services images - Admin only

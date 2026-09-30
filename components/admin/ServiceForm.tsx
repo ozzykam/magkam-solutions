@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { getCalculators } from '@/services/calculator-service';
+import type { Calculator } from '@/types/calculator';
 import { useRouter } from 'next/navigation';
 import { Timestamp } from 'firebase/firestore';
 import { Service } from '@/types/services';
@@ -19,6 +21,10 @@ interface ServiceFormProps {
 export default function ServiceForm({ service, onSubmit, submitLabel = 'Save Service' }: ServiceFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [calculators, setCalculators] = useState<Calculator[]>([]);
+  const [calculatorId, setCalculatorId] = useState(service?.calculatorId ?? '');
+  const [calculatorError, setCalculatorError] = useState('');
+  useEffect(() => { getCalculators().then(setCalculators).catch(() => setCalculatorError('Could not load calculator choices.')); }, []);
   const [formData, setFormData] = useState({
     name: service?.name || '',
     description: service?.description || '',
@@ -105,6 +111,7 @@ export default function ServiceForm({ service, onSubmit, submitLabel = 'Save Ser
 
       // Clean undefined values before submitting
       const serviceData = cleanServiceData(rawServiceData);
+      serviceData.calculatorId = calculatorId;
 
       await onSubmit(serviceData);
       router.push('/admin/services');
@@ -121,6 +128,14 @@ export default function ServiceForm({ service, onSubmit, submitLabel = 'Save Ser
       <Card>
         <div className="p-6 space-y-6">
           <h2 className="text-lg font-semibold text-gray-900">Basic Information</h2>
+          <label className="block text-sm font-medium">Cost calculator
+            <select className="mt-2 w-full border rounded-lg p-2" value={calculatorId} onChange={e => setCalculatorId(e.target.value)}>
+              <option value="">No calculator</option>
+              {calculatorId && !calculators.some(calculator => calculator.id === calculatorId) && <option value={calculatorId}>Current calculator ({calculatorId})</option>}
+              {calculators.map(calculator => <option key={calculator.id} value={calculator.id}>{calculator.name}{calculator.isActive ? '' : ' (inactive)'}</option>)}
+            </select>
+          </label>
+          {calculatorError && <p role="alert">{calculatorError}</p>}
 
           <Input
             label="Service Name"

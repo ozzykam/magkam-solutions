@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DEFAULT_CALCULATOR, CalculatorStep } from '@/types/calculator';
+import { DEFAULT_CALCULATOR as BASE_CALCULATOR, CalculatorStep } from '@/types/calculator';
+import { prepareCalculator } from '@/lib/calculator';
 import { createCalculator } from '@/services/calculator-service';
 import { Button, Card, Input, Textarea } from '@/components/ui';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import CalculatorBuilder from '../CalculatorBuilder';
+
+const DEFAULT_CALCULATOR = prepareCalculator(BASE_CALCULATOR);
 
 /**
  * New Calculator Page
@@ -93,7 +96,7 @@ export default function NewCalculatorPage() {
       router.push('/admin/calculators');
     } catch (error) {
       console.error('Error creating calculator:', error);
-      alert('Failed to create calculator. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to create calculator. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -211,6 +214,7 @@ export default function NewCalculatorPage() {
         {/* Hourly Rate Settings */}
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Hourly Rate Settings</h2>
+          <p className="text-sm text-gray-600 mb-4">All estimates use the default rate. Minimum and maximum values guard your rate setting; visitors cannot change it. Review the template hours and option surcharges before publishing.</p>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
