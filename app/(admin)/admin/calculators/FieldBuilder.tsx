@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { CalculatorFeature, CalculatorConfigField } from '@/types/calculator';
+import { CalculatorFeature, CalculatorConfigField, CalculatorPackage } from '@/types/calculator';
+import PackageBuilder from './PackageBuilder';
 import { Button, Input, Card, Textarea } from '@/components/ui';
 
 interface FieldBuilderProps {
@@ -67,7 +68,7 @@ export default function FieldBuilder({
   /**
    * Update a select option
    */
-  const updateOption = (index: number, key: 'label' | 'value' | 'hours' | 'description' | 'examples' | 'suggestedPages', value: string | number | string[]) => {
+  const updateOption = (index: number, key: 'label' | 'value' | 'hours' | 'description' | 'examples' | 'suggestedPages' | 'package', value: string | number | string[] | CalculatorPackage) => {
     if (!configField || !configField.options) return;
     const updatedOptions = configField.options.map((opt, i) =>
       i === index ? { ...opt, [key]: value } : opt
@@ -346,7 +347,7 @@ export default function FieldBuilder({
                           placeholder="Value"
                           className="flex-1"
                         />
-                        <Input label="Additional hours" type="number" aria-label={`Additional hours for ${option.label}`} min={0} step={0.5} value={option.hours ?? 0} onChange={e => updateOption(index, 'hours', Number(e.target.value))} className="w-28" />
+                        <Input label="Package setup hours" type="number" aria-label={`Package setup hours for ${option.label}`} min={0} step={0.5} value={option.hours ?? 0} onChange={e => updateOption(index, 'hours', Number(e.target.value))} className="w-28" />
                         <Button type="button"
                           size="sm"
                           variant="danger"
@@ -358,6 +359,7 @@ export default function FieldBuilder({
                         <Textarea label="What this solution includes" value={option.description ?? ''} rows={3} onChange={e => updateOption(index, 'description', e.target.value)} />
                         <Textarea label="Short examples (one per line)" value={(option.examples ?? []).join('\n')} rows={2} onChange={e => updateOption(index, 'examples', e.target.value.split('\n'))} />
                         <Textarea label="Suggested pages (one per line)" value={(option.suggestedPages ?? []).join('\n')} rows={3} onChange={e => updateOption(index, 'suggestedPages', e.target.value.split('\n'))} />
+                        <PackageBuilder value={option.package} fields={allFields} hours={option.hours ?? 0} onChange={value => updateOption(index, 'package', value)} />
                       </div>
                     ))}
                   </div>

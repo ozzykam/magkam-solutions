@@ -20,7 +20,7 @@ export default function SolutionGuidance({ field, value }: { field: CalculatorCo
     {selected && <section aria-label={`About ${selected.label}`} className="rounded-lg border border-primary-200 bg-primary-50 p-4 sm:p-5">
       <h3 className="font-semibold text-gray-900 mb-2">About {selected.label}</h3>
       <Guidance option={selected} />
-      <p className="text-xs text-gray-600 mt-4">These are examples to help you choose, not a list of included features. Choose the pages and features you need below; we’ll confirm the scope together.</p>
+      <p className="text-xs text-gray-600 mt-4">{selected.package ? 'Your package summary above lists the included pages and services. Use these examples to choose any extras below; we’ll confirm the scope together.' : 'Use these examples to choose the pages and features you need below; we’ll confirm the scope together.'}</p>
     </section>}
     <details className="rounded-lg border border-gray-200 p-4">
       <summary className="cursor-pointer font-medium text-sm">Compare solution types</summary>

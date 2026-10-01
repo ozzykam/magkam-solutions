@@ -8,23 +8,25 @@ interface Props {
   field: CalculatorConfigField;
   value: CalculatorPageSelection;
   onChange: (value: CalculatorPageSelection) => void;
+  includedPages?: string[];
 }
 
-export default function PageChecklist({ field, value, onChange }: Props) {
-  const count = pageCount(field, value);
+export default function PageChecklist({ field, value, onChange, includedPages = [] }: Props) {
+  const count = pageCount(field, value, includedPages);
   const helpId = `${field.id}-page-help`;
   const max = field.max ?? 100;
-  const atLimit = !value.unsure && value.pages.length + value.otherPages.length >= max;
+  const atLimit = !value.unsure && new Set([...includedPages, ...value.pages]).size + value.otherPages.length >= max;
 
   return <fieldset aria-describedby={helpId} className="space-y-4">
     <legend className="text-lg font-semibold">{field.label}</legend>
     <p id={helpId} className="text-sm text-gray-600">{field.helpText || 'Choose what you have in mind. We’ll help confirm the pages during your consultation.'}</p>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       {PAGE_OPTIONS.map(option => {
-        const selected = value.pages.includes(option.value);
+        const included = includedPages.includes(option.value);
+        const selected = included || value.pages.includes(option.value);
         return <label key={option.value} className={`flex items-start gap-3 rounded-lg border p-4 cursor-pointer ${selected ? 'border-primary-500 bg-primary-50' : 'border-gray-200'}`}>
-          <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-primary-600" checked={selected} disabled={!selected && atLimit} onChange={e => onChange({ ...value, unsure: false, pages: e.target.checked ? [...value.pages, option.value] : value.pages.filter(page => page !== option.value) })} />
-          <span><span className="block font-medium">{option.label}</span><span className="block text-sm text-gray-600 mt-1">{option.description}</span></span>
+          <input type="checkbox" className="mt-1 h-4 w-4 shrink-0 accent-primary-600" checked={selected} disabled={included || (!selected && atLimit)} onChange={e => onChange({ ...value, unsure: false, pages: e.target.checked ? [...value.pages, option.value] : value.pages.filter(page => page !== option.value) })} />
+          <span><span className="block font-medium">{option.label}{included && <span className="ml-2 text-xs text-primary-700"> Included</span>}</span><span className="block text-sm text-gray-600 mt-1">{option.description}</span></span>
         </label>;
       })}
       <label className={`flex items-start gap-3 rounded-lg border p-4 cursor-pointer ${value.otherPages.length ? 'border-primary-500 bg-primary-50' : 'border-gray-200'}`}>
@@ -42,10 +44,10 @@ export default function PageChecklist({ field, value, onChange }: Props) {
     <p className="text-sm text-gray-600">Blog and Shop each count as one section here, not one page per post or product. We’ll confirm any additional layouts together.</p>
     <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-4 cursor-pointer">
       <input type="checkbox" className="h-4 w-4 accent-primary-600" checked={value.unsure} onChange={e => onChange({ pages: [], otherPages: [], unsure: e.target.checked })} />
-      <span>I’m not sure yet</span>
+      <span>{includedPages.length ? 'I’m not sure about additional pages yet' : 'I’m not sure yet'}</span>
     </label>
     <div className="rounded-lg bg-primary-50 p-4 text-sm" aria-live="polite">
-      {value.unsure ? <><strong>We’ll help you plan your pages.</strong><p className="mt-1">For now, your estimate assumes {count} {count === 1 ? 'page' : 'pages'}. We’ll confirm the scope during your consultation.</p></> : <><strong>You’ve selected {count} {count === 1 ? 'page' : 'pages'}.</strong>{count === 0 && <p className="mt-1">Choose your pages to refine the starting estimate, or let us help you decide.</p>}</>}
+      {value.unsure ? <><strong>We’ll help you plan your pages.</strong><p className="mt-1">For now, your estimate assumes {count} {count === 1 ? 'page' : 'pages'}, including the package’s required pages. We’ll confirm the scope during your consultation.</p></> : <><strong>{count} {count === 1 ? 'page' : 'pages'} selected{includedPages.length ? ` (${includedPages.length} included in your package)` : ''}.</strong>{count === 0 && <p className="mt-1">Choose your pages to refine the starting estimate, or let us help you decide.</p>}</>}
       {atLimit && <p className="mt-1">You’ve reached this calculator’s limit of {max} pages. We can discuss a larger site during your consultation.</p>}
     </div>
   </fieldset>;

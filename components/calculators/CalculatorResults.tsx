@@ -13,6 +13,10 @@ interface CalculatorResultsProps {
   calculatorName: string;
   totalHours: number;
   totalPrice: number;
+  basePrice: number;
+  additionsPrice: number;
+  packageNames: string[];
+  packageServices: string[];
   lineItems: LineItem[];
   contactName: string;
   preview?: boolean;
@@ -32,6 +36,10 @@ export default function CalculatorResults({
   calculatorName,
   totalHours,
   totalPrice,
+  basePrice,
+  additionsPrice,
+  packageNames,
+  packageServices,
   lineItems,
   contactName,
   preview = false,
@@ -54,6 +62,8 @@ export default function CalculatorResults({
       {/* Estimate Breakdown */}
       <Card className="p-8">
         <h3 className="text-2xl font-bold mb-6">Your Custom {calculatorName} Estimate</h3>
+        {packageNames.length > 0 && <p className="font-semibold mb-3">{packageNames.join(' + ')} foundation</p>}
+        {packageServices.length > 0 && <p className="text-sm text-gray-600 mb-6">Package services: {packageServices.join(', ')}. These are covered by the base estimate.</p>}
 
         {/* Line Items */}
         <div className="space-y-4 mb-6">
@@ -64,7 +74,7 @@ export default function CalculatorResults({
             >
               <div>
                 <div className="font-medium">{item.label}</div>
-                <div className="text-sm text-gray-500">{item.hours} hours</div>
+                <div className="text-sm text-gray-500">{item.hours} {item.hours === 1 ? 'hour' : 'hours'}</div>
               </div>
               <div className="text-lg font-semibold">
                 ${item.cost.toLocaleString()}
@@ -75,6 +85,8 @@ export default function CalculatorResults({
 
         {/* Total */}
         <div className="bg-blue-50 p-6 rounded-lg">
+          <div className="flex justify-between gap-3 mb-2"><span>Base estimate:</span><strong>${basePrice.toLocaleString()}</strong></div>
+          <div className="flex justify-between gap-3 mb-4"><span>Your additions:</span><strong>${additionsPrice.toLocaleString()}</strong></div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-lg font-medium">Total Hours:</span>
             <span className="text-xl font-bold">{totalHours} hrs</span>

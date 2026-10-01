@@ -14,7 +14,7 @@ function load(relative, mocks = {}) {
   mod._compile(compiled, filename);
   return mod.exports;
 }
-const { calculateEstimate, initialConfig, featureQuantity, isFeatureVisible, configErrors, validateCalculator, prepareCalculator, pageCount, pageSelectionErrors, pageSummary, SOLUTION_GUIDANCE } = load('lib/calculator.ts');
+const { calculateEstimate, initialConfig, featureQuantity, isFeatureVisible, configErrors, validateCalculator, prepareCalculator, pageCount, pageSelectionErrors, pageSummary, SOLUTION_GUIDANCE, configWithPages, packagePageIds, effectiveFeatureSelections, pricedFeatureQuantity } = load('lib/calculator.ts');
 const { DEFAULT_CALCULATOR } = load('types/calculator.ts');
 const fixture = structuredClone(DEFAULT_CALCULATOR);
 const config = initialConfig(fixture);
@@ -68,11 +68,11 @@ test('displayed line items sum exactly to the stored estimate', () => {
   assert.equal(estimate.totalPrice, Math.round(estimate.lineItems.reduce((sum, item) => sum + item.cost, 0) * 100) / 100);
 });
 
-function apiFixture({ enabled = true, active = true, count = 0, failWrite = false } = {}) {
+function apiFixture({ enabled = true, active = true, count = 0, failWrite = false, definition = fixture } = {}) {
   const writes = [];
   const db = {
     doc: () => ({ get: async () => ({ data: () => ({ features: { calculators: { enabled } } }) }) }),
-    collection: collection => ({ doc: id => ({ collection, id: id ?? 'new-lead', get: async () => ({ exists: true, id: 'calculator', data: () => ({ ...fixture, isActive: active }) }) }) }),
+    collection: collection => ({ doc: id => ({ collection, id: id ?? 'new-lead', get: async () => ({ exists: true, id: 'calculator', data: () => ({ ...definition, isActive: active }) }) }) }),
     runTransaction: async callback => {
       const pending = [];
       const result = await callback({ get: async () => ({ data: () => ({ count, windowStart: { toMillis: () => Date.now() } }) }), set: (ref, data) => pending.push({ ref, data }) });
@@ -161,7 +161,7 @@ test('API derives page count from choices and stores names rather than trusting 
   assert.equal(submission.config.num_pages, 3);
   assert.equal(submission.totalPrice, 69000);
   assert.match(submission.pageSummaries.num_pages, /Portfolio/);
-  assert.match(writes.find(write => write.ref.collection === 'contactMessages').data.message, /3 pages: Home, Contact, Portfolio/);
+  assert.match(writes.find(write => write.ref.collection === 'contactMessages').data.message, /3 pages: Home \(included\), Contact \(included\), Portfolio/);
 });
 test('API retains uncertainty and rejects malformed page choices before creating leads', async () => {
   const { post, writes } = apiFixture();
@@ -183,4 +183,83 @@ test('all five solution types have two examples and suggestions; custom copy and
   assert.equal(option.description, 'Custom description');
   assert.deepEqual(option.examples, ['Custom example']);
   assert.ok(option.suggestedPages.includes('Portfolio or case studies'));
+});
+
+const packaged = prepareCalculator(fixture);
+const shopConfig = { ...config, website_type: 'ecommerce' };
+const emptyPages = { pages: [], otherPages: [], unsure: false };
+
+test('starter packages preserve rates and setup hours, include shop, and split base from extras', () => {
+  const answers = configWithPages(packaged, shopConfig, { num_pages: emptyPages });
+  assert.equal(answers.num_pages, 3);
+  const base = calculateEstimate(packaged, answers, { landing_page_design: false });
+  assert.equal(base.totalHours, 250); // 40 setup + 120 pages + 90 globally required
+  assert.equal(base.basePrice, 37500);
+  assert.equal(base.additionsPrice, 0);
+  assert.ok(base.packageServices.includes('Checkout'));
+  const extraAnswers = configWithPages(packaged, shopConfig, { num_pages: { ...emptyPages, pages: ['shop', 'about'] } });
+  const extra = calculateEstimate(packaged, extraAnswers, { copywriting: true, copywriting_qty: 1 });
+  assert.equal(extraAnswers.num_pages, 4);
+  assert.equal(extra.basePrice, base.basePrice);
+  assert.equal(extra.additionsPrice, (40 + 25) * 150);
+  assert.equal(extra.basePrice + extra.additionsPrice, extra.totalPrice);
+});
+
+test('switching packages removes automatic pages but preserves manual choices and avoids duplicates', () => {
+  const manual = { num_pages: { ...emptyPages, pages: ['about'] } };
+  assert.equal(configWithPages(packaged, shopConfig, manual).num_pages, 4);
+  assert.equal(configWithPages(packaged, config, manual).num_pages, 3);
+  assert.deepEqual(manual.num_pages.pages, ['about']);
+  const manualShop = { num_pages: { ...emptyPages, pages: ['shop'] } };
+  assert.equal(configWithPages(packaged, shopConfig, manualShop).num_pages, 3);
+  assert.equal(configWithPages(packaged, config, manualShop).num_pages, 3);
+  const included = packagePageIds(packaged, shopConfig, 'num_pages');
+  assert.equal(pageSelectionErrors(pagesField, emptyPages, included).length, 0);
+  assert.equal(pageCount(pagesField, { ...emptyPages, unsure: true }, included), 3);
+  assert.ok(pageSelectionErrors({ ...pagesField, max: 2 }, emptyPages, included).length);
+});
+
+test('custom packages override starters; required quantities and dependent conditions are consistent', () => {
+  const definition = structuredClone(packaged);
+  const option = definition.steps[0].fields[0].options[0];
+  option.package = { pageFieldId: 'num_pages', includedPages: ['home'], includedFeatureIds: ['copywriting'], recommendedFeatureIds: [], includedServices: ['Custom setup'] };
+  definition.steps[1].fields.push({ id: 'dependent', label: 'Dependent', hours: 2, mandatory: true, conditional: { showWhen: 'copywriting', value: true } });
+  const answers = configWithPages(definition, config, { num_pages: emptyPages });
+  const estimate = calculateEstimate(definition, answers, { copywriting: false, copywriting_qty: 0 });
+  assert.equal(pricedFeatureQuantity(feature, answers, { copywriting_qty: 0 }, true), 10);
+  assert.ok(estimate.lineItems.some(item => item.label.startsWith('Dependent')));
+  assert.equal(estimate.additionsPrice, 0);
+  assert.deepEqual(prepareCalculator(definition).steps[0].fields[0].options[0].package, option.package);
+  assert.equal(effectiveFeatureSelections(definition, answers, { copywriting: false }).copywriting, true);
+  option.package.includedFeatureIds = ['missing'];
+  assert.throws(() => validateCalculator(definition), /no longer exists/);
+});
+
+test('splitting fractional page work preserves its rounded total hours and price', () => {
+  const definition = { defaultHourlyRate: 19.99, steps: [{ fields: [
+    { id: 'solution', label: 'Solution', type: 'select', defaultValue: 'a', options: [{ value: 'a', label: 'A', hours: 0, package: { pageFieldId: 'pages', includedPages: ['home'], includedFeatureIds: ['design'], recommendedFeatureIds: [], includedServices: [] } }] },
+    { id: 'pages', label: 'Pages', type: 'pages', defaultValue: 1 },
+    { id: 'design', label: 'Design', hours: 0.333, quantityFrom: 'pages' },
+  ] }] };
+  const estimate = calculateEstimate(definition, { solution: 'a', pages: 3 }, {});
+  assert.equal(estimate.totalHours, 1);
+  assert.equal(estimate.totalPrice, 19.99);
+  assert.equal(Math.round((estimate.basePrice + estimate.additionsPrice) * 100) / 100, 19.99);
+});
+
+test('API enforces package pages, setup scope and features regardless of client prices or field order', async () => {
+  const definition = structuredClone(fixture);
+  definition.steps[0].fields.reverse();
+  const { post, writes } = apiFixture({ definition });
+  const response = await post({ config: { ...shopConfig, num_pages: 0 }, pageSelections: { num_pages: emptyPages }, selections: { site_planning: false, landing_page_design: false }, basePrice: 1, packageServices: ['forged'] });
+  assert.equal(response.status, 201);
+  const { estimate } = await response.json();
+  assert.equal(estimate.totalPrice, 37500);
+  const saved = writes.find(write => write.ref.collection === 'calculatorSubmissions').data;
+  assert.equal(saved.config.num_pages, 3);
+  assert.deepEqual(saved.pageSelections.num_pages.pages, ['home', 'shop', 'contact']);
+  assert.equal(saved.selections.landing_page_design, true);
+  assert.ok(saved.packageServices.includes('Checkout'));
+  assert.ok(!saved.packageServices.includes('forged'));
+  assert.match(writes.find(write => write.ref.collection === 'contactMessages').data.message, /Included package services: Product catalogue setup, Shopping cart, Checkout, Payment integration/);
 });

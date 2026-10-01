@@ -3,7 +3,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { getAdminFirestore } from '@/lib/firebase/admin';
-import { calculateEstimate, configErrors, featureQuantity, initialConfig, prepareCalculator, pageCount, pageSelectionErrors, pageSummary } from '@/lib/calculator';
+import { calculateEstimate, configErrors, pricedFeatureQuantity, initialConfig, prepareCalculator, pageCount, pageSelectionErrors, pageSummary, packagePageIds, packageFeatureIds, effectivePages } from '@/lib/calculator';
 import type { Calculator, CalculatorPageSelection } from '@/types/calculator';
 import { getClientIdentifier } from '@/lib/utils/rate-limit';
 
@@ -43,21 +43,25 @@ export async function POST(request: Request) {
     const pageSummaries: Record<string, string> = {};
     const selections: Record<string, boolean | number> = {};
     for (const field of calculator.steps.flatMap(step => step.fields)) {
+      if ('type' in field && field.type !== 'pages' && field.id !== 'hourly_rate' && input.config[field.id] !== undefined) config[field.id] = input.config[field.id];
+    }
+    for (const field of calculator.steps.flatMap(step => step.fields)) {
       if ('type' in field && field.type === 'pages') {
         const selected = input.pageSelections?.[field.id];
-        const errors = pageSelectionErrors(field, selected);
+        const included = packagePageIds(calculator, config, field.id);
+        const errors = pageSelectionErrors(field, selected, included);
         if (errors.length) return NextResponse.json({ error: errors[0] }, { status: 400 });
-        pageSelections[field.id] = selected!;
-        pageSummaries[field.id] = pageSummary(field, selected!);
-        config[field.id] = pageCount(field, selected!);
-      } else if ('type' in field && field.id !== 'hourly_rate' && input.config[field.id] !== undefined) config[field.id] = input.config[field.id];
+        pageSelections[field.id] = effectivePages(selected!, included);
+        pageSummaries[field.id] = pageSummary(field, selected!, included);
+        config[field.id] = pageCount(field, selected!, included);
+      }
     }
     const errors = configErrors(calculator.steps.flatMap(step => step.fields), config);
     if (errors.length) return NextResponse.json({ error: errors[0] }, { status: 400 });
     for (const field of calculator.steps.flatMap(step => step.fields)) {
       if ('hours' in field) {
-        selections[field.id] = field.mandatory === true || input.selections[field.id] === true;
-        if (field.hasQuantity || field.quantityFrom) selections[`${field.id}_qty`] = featureQuantity(field, config, input.selections);
+        selections[field.id] = field.mandatory === true || packageFeatureIds(calculator, config).includes(field.id) || input.selections[field.id] === true;
+        if (field.hasQuantity || field.quantityFrom) selections[`${field.id}_qty`] = pricedFeatureQuantity(field, config, input.selections, packageFeatureIds(calculator, config).includes(field.id));
       }
     }
     const estimate = calculateEstimate(calculator, config, selections);
@@ -88,7 +92,7 @@ export async function POST(request: Request) {
       transaction.set(message, {
         name: input.contactInfo.name, email: input.contactInfo.email,
         subject: `Calculator Estimate Request - ${calculator.name}`, source: 'calculator',
-        message: [`Calculator: ${calculator.name}`, ...answers, '', ...estimate.lineItems.map(item => `${item.label}: ${item.hours} hours — $${item.cost.toLocaleString('en-US')}`), '', `Estimated total: $${estimate.totalPrice.toLocaleString('en-US')}`, `Hourly rate: $${estimate.hourlyRate}`, 'The visitor consented to contact about this project estimate.'].join('\n'),
+        message: [`Calculator: ${calculator.name}`, ...answers, ...(estimate.packageServices.length ? [`Included package services: ${estimate.packageServices.join(', ')}`] : []), '', `Base foundation: $${estimate.basePrice.toLocaleString('en-US')}`, `Additions: $${estimate.additionsPrice.toLocaleString('en-US')}`, ...estimate.lineItems.map(item => `${item.label}: ${item.hours} hours — $${item.cost.toLocaleString('en-US')}`), '', `Estimated total: $${estimate.totalPrice.toLocaleString('en-US')}`, `Hourly rate: $${estimate.hourlyRate}`, 'The visitor consented to contact about this project estimate.'].join('\n'),
         metadata: { calculatorId: calculator.id, submissionId: submission.id, totalPrice: estimate.totalPrice, totalHours: estimate.totalHours },
         isRead: false, isArchived: false, createdAt: now,
       });

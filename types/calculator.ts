@@ -50,6 +50,7 @@ export interface CalculatorConfigField {
     description?: string;
     examples?: string[];
     suggestedPages?: string[];
+    package?: CalculatorPackage;
   }>;
   min?: number;
   max?: number;
@@ -61,6 +62,14 @@ export interface CalculatorConfigField {
  * Calculator Settings
  * Main calculator configuration
  */
+export interface CalculatorPackage {
+  pageFieldId?: string;
+  includedPages: string[];
+  includedFeatureIds: string[];
+  recommendedFeatureIds: string[];
+  includedServices: string[];
+}
+
 export interface Calculator {
   id: string;
   name: string;
@@ -99,6 +108,10 @@ export interface CalculatorSubmission {
   config?: Record<string, string | number>;
   pageSelections?: Record<string, CalculatorPageSelection>;
   pageSummaries?: Record<string, string>;
+  basePrice?: number;
+  additionsPrice?: number;
+  packageNames?: string[];
+  packageServices?: string[];
   lineItems?: CalculatorLineItem[];
   consent?: boolean;
   totalHours: number;
@@ -117,6 +130,7 @@ export interface CalculatorLineItem {
   label: string;
   hours: number;
   cost: number;
+  category?: 'base' | 'addition';
 }
 
 export interface CalculatorEstimate {
@@ -124,6 +138,10 @@ export interface CalculatorEstimate {
   totalPrice: number;
   hourlyRate: number;
   lineItems: CalculatorLineItem[];
+  basePrice: number;
+  additionsPrice: number;
+  packageNames: string[];
+  packageServices: string[];
 }
 
 export interface CalculatorSubmissionRequest {

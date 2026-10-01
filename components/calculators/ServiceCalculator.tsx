@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { calculateEstimate, initialConfig, configErrors, featureQuantity, isFeatureVisible, pageCount, pageSelectionErrors, pageSummary } from '@/lib/calculator';
+import { calculateEstimate, initialConfig, configErrors, featureQuantity, pricedFeatureQuantity, effectiveFeatureSelections, isFeatureVisible, pageSelectionErrors, pageSummary, configWithPages, packagePageIds, packageFeatureIds, activePackages, PAGE_OPTIONS } from '@/lib/calculator';
 import type { CalculatorEstimate, CalculatorPageSelection } from '@/types/calculator';
 import {
   Calculator,
@@ -14,6 +14,7 @@ import { Button, Card, Input } from '@/components/ui';
 import CalculatorResults from './CalculatorResults';
 import PageChecklist from './PageChecklist';
 import SolutionGuidance from './SolutionGuidance';
+import PackageSummary from './PackageSummary';
 
 interface ServiceCalculatorProps {
   calculator: Calculator | SerializedCalculator;
@@ -47,7 +48,7 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
    * Configuration values (hourly rate, website type, etc.)
    * These affect how features are calculated
    */
-  const [config, setConfig] = useState(() => {
+  const [configInputs, setConfig] = useState(() => {
     const initial = initialConfig(calculator);
     calculator.steps.flatMap(step => step.fields).forEach(field => { if ('type' in field && field.type === 'pages') initial[field.id] = 0; });
     return initial;
@@ -55,13 +56,17 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
   const [pageSelections, setPageSelections] = useState<Record<string, CalculatorPageSelection>>(() => Object.fromEntries(
     calculator.steps.flatMap(step => step.fields).filter(field => 'type' in field && field.type === 'pages').map(field => [field.id, { pages: [], otherPages: [], unsure: false }])
   ));
+  const [packageNotice, setPackageNotice] = useState('');
+  const config = useMemo(() => configWithPages(calculator, configInputs, pageSelections), [calculator, configInputs, pageSelections]);
+  const includedFeatures = packageFeatureIds(calculator, config);
+  const recommendedFeatures = activePackages(calculator, config).flatMap(item => item.recommendedFeatureIds);
 
   /**
    * Feature selections
    * Key: feature ID
    * Value: true/false for boolean features, or number for quantity features
    */
-  const [selections, setSelections] = useState<Record<string, boolean | number>>(() => {
+  const [selectionInputs, setSelections] = useState<Record<string, boolean | number>>(() => {
     const initial: Record<string, boolean | number> = {};
     // Pre-select mandatory features
     calculator.steps.forEach(step => {
@@ -80,6 +85,7 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
     });
     return initial;
   });
+  const selections = useMemo(() => effectiveFeatureSelections(calculator, config, selectionInputs), [calculator, config, selectionInputs]);
 
   /**
    * Contact form data
@@ -98,12 +104,26 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
    *    - If has quantity, multiply by quantity
    * 3. Multiply total hours by hourly rate to get price
    */
-  const { totalPrice } = useMemo(() => calculateEstimate(calculator, config, selections), [calculator, config, selections]);
+  const estimate = useMemo(() => calculateEstimate(calculator, config, selections), [calculator, config, selections]);
+  const { totalPrice } = estimate;
 
   /**
    * Handle configuration field changes (hourly rate, website type, etc.)
    */
   const handleConfigChange = (fieldId: string, value: string | number) => {
+    const next = { ...configInputs, [fieldId]: value };
+    const packageItems = (answers: typeof config) => activePackages(calculator, answers).flatMap(pack => [
+      ...pack.includedPages.map(id => PAGE_OPTIONS.find(page => page.value === id)?.label ?? id),
+      ...pack.includedFeatureIds.map(id => calculator.steps.flatMap(step => step.fields).find(field => field.id === id)?.label ?? id),
+      ...pack.includedServices,
+    ]);
+    const before = packageItems(configInputs);
+    const after = packageItems(next);
+    const added = [...new Set(after.filter(item => !before.includes(item)))];
+    const removed = [...new Set(before.filter(item => !after.includes(item)))];
+    if (added.length || removed.length) setPackageNotice([added.length ? `Added to the package: ${added.join(', ')}.` : '', removed.length ? `No longer automatically included: ${removed.join(', ')}.` : '', 'Your own optional selections have been kept.'].filter(Boolean).join(' '));
+    else setPackageNotice('');
+    setError('');
     setConfig(prev => ({ ...prev, [fieldId]: value }));
   };
 
@@ -111,7 +131,7 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
    * Handle feature selection toggle
    */
   const handleFeatureToggle = (featureId: string, mandatory?: boolean) => {
-    if (mandatory) return; // Can't toggle mandatory features
+    if (mandatory || includedFeatures.includes(featureId)) return;
 
     const field = calculator.steps.flatMap(step => step.fields).find(field => field.id === featureId) as CalculatorFeature;
     setSelections(prev => ({ ...prev, [featureId]: !prev[featureId], [`${featureId}_qty`]: featureQuantity(field, config, prev) }));
@@ -122,7 +142,7 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
    */
   const handleQuantityChange = (featureId: string, value: number) => {
     const field = calculator.steps.flatMap(step => step.fields).find(field => field.id === featureId) as CalculatorFeature;
-    setSelections(prev => ({ ...prev, [`${featureId}_qty`]: featureQuantity(field, config, { ...prev, [`${featureId}_qty`]: value }) }));
+    setSelections(prev => ({ ...prev, [`${featureId}_qty`]: pricedFeatureQuantity(field, config, { ...prev, [`${featureId}_qty`]: value }, includedFeatures.includes(featureId)) }));
   };
 
   /**
@@ -130,7 +150,7 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
    */
   const handleNext = () => {
     const fields = calculator.steps[currentStep].fields;
-    const errors = fields.flatMap(field => 'type' in field && field.type === 'pages' ? pageSelectionErrors(field, pageSelections[field.id]) : []).concat(configErrors(fields, config));
+    const errors = fields.flatMap(field => 'type' in field && field.type === 'pages' ? pageSelectionErrors(field, pageSelections[field.id], packagePageIds(calculator, config, field.id)) : []).concat(configErrors(fields, config));
     if (errors.length) { setError(errors[0]); return; }
     setError('');
     if (currentStep < calculator.steps.length - 1) {
@@ -210,6 +230,10 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
         totalHours={result.totalHours}
         totalPrice={result.totalPrice}
         lineItems={result.lineItems}
+        basePrice={result.basePrice}
+        additionsPrice={result.additionsPrice}
+        packageNames={result.packageNames}
+        packageServices={result.packageServices}
         contactName={name}
         preview={preview}
       />
@@ -253,6 +277,8 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
       )}
 
       <p className="mb-6 text-sm text-gray-600">This is a planning estimate, subject to scope review. Contact details unlock the full itemized breakdown.</p>
+      <PackageSummary calculator={calculator} config={config} selections={selections} estimate={estimate} />
+      {packageNotice && <p role="status" className="mb-4 rounded-lg bg-blue-50 p-4 text-sm text-gray-700">{packageNotice}</p>}
       <Card className="p-5 sm:p-8">
         {error && <p role="alert" className="mb-5 rounded-lg bg-red-50 p-3 text-red-700">{error}</p>}
         {reviewing ? <div>
@@ -261,9 +287,9 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
           {calculator.steps.map((reviewStep, index) => <div key={reviewStep.id} className="mb-5 border-b pb-4">
             <div className="flex justify-between items-center gap-3"><h3 className="font-semibold">{reviewStep.title}</h3><Button type="button" size="sm" variant="secondary" onClick={() => { setCurrentStep(index); setReviewing(false); }}>Edit {reviewStep.title}</Button></div>
             <ul className="mt-3 space-y-2 text-sm">{reviewStep.fields.map(field => {
-              if ('type' in field && field.type === 'pages') return <li key={field.id}>{field.label}: {pageSummary(field, pageSelections[field.id])}</li>;
+              if ('type' in field && field.type === 'pages') return <li key={field.id}>{field.label} {pageSummary(field, pageSelections[field.id], packagePageIds(calculator, config, field.id))}</li>;
               if ('type' in field) return field.id === 'hourly_rate' ? null : <li key={field.id}>{field.label}: {field.options?.find(option => String(option.value) === String(config[field.id]))?.label ?? config[field.id] ?? '—'}</li>;
-              return (field.mandatory || selections[field.id] === true) && isFeatureVisible(field, config, selections) ? <li key={field.id}>{field.label}{field.hasQuantity || field.quantityFrom ? ` × ${featureQuantity(field, config, selections)}` : ''}</li> : null;
+              return includedFeatures.includes(field.id) || ((field.mandatory || selections[field.id] === true) && isFeatureVisible(field, config, selections)) ? <li key={field.id}>{field.label}{field.hasQuantity || field.quantityFrom ? ` × ${pricedFeatureQuantity(field, config, selections, includedFeatures.includes(field.id))}` : ''}{includedFeatures.includes(field.id) ? (field.hasQuantity || field.quantityFrom ? ' (includes package allocation)' : ' (included)') : ''}</li> : null;
             })}</ul>
           </div>)}
           <Button type="button" onClick={() => { setReviewing(false); setShowContactForm(true); }}>Get Detailed Breakdown</Button>
@@ -355,9 +381,8 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
                 if ('type' in field) {
                   const configField = field as CalculatorConfigField;
                   if (field.id === 'hourly_rate') return null;
-                  if (field.type === 'pages') return <PageChecklist key={field.id} field={field} value={pageSelections[field.id]} onChange={value => {
+                  if (field.type === 'pages') return <PageChecklist key={field.id} field={field} value={pageSelections[field.id]} includedPages={packagePageIds(calculator, config, field.id)} onChange={value => {
                     setPageSelections(previous => ({ ...previous, [field.id]: value }));
-                    setConfig(previous => ({ ...previous, [field.id]: pageCount(field, value) }));
                     setError('');
                   }} />;
                   return (
@@ -376,7 +401,7 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
                           <option value="">Choose an option</option>
                           {configField.options?.map(opt => (
                             <option key={opt.value} value={opt.value}>
-                              {opt.label}{opt.hours ? ` (+$${(opt.hours * calculator.defaultHourlyRate).toLocaleString()})` : ''}
+                              {opt.label}{!opt.package && opt.hours ? ` (+$${(opt.hours * calculator.defaultHourlyRate).toLocaleString()})` : ''}
                             </option>
                           ))}
                         </select>
@@ -405,12 +430,13 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
 
                 // Render feature checkboxes
                 const feature = field as CalculatorFeature;
-                const isSelected = feature.mandatory || selections[feature.id] === true;
-                const quantity = featureQuantity(feature, config, selections);
-                const featureCost = calculateEstimate({ ...calculator, steps: [{ ...step, fields: [feature] }] }, config, { ...selections, [feature.id]: true }).totalPrice;
+                const included = includedFeatures.includes(feature.id);
+                const isSelected = included || feature.mandatory || selections[feature.id] === true;
+                const quantity = pricedFeatureQuantity(feature, config, selections, included);
+                const featureCost = calculateEstimate({ ...calculator, steps: [{ ...step, fields: [{ ...feature, conditional: undefined }] }] }, config, { ...selections, [feature.id]: true, [`${feature.id}_qty`]: quantity }).totalPrice;
 
                 // Check if feature should be hidden
-                if (!isFeatureVisible(feature, config, selections)) return null;
+                if (!included && !isFeatureVisible(feature, config, selections)) return null;
 
                 return (
                   <div key={feature.id} className="flex items-center justify-between p-4 border rounded-lg">
@@ -420,15 +446,16 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
                         type="checkbox"
                         checked={!!isSelected}
                         onChange={() => handleFeatureToggle(feature.id, feature.mandatory)}
-                        disabled={feature.mandatory}
+                        disabled={included || feature.mandatory}
                         className="w-5 h-5"
                       />
                       <div>
                         <label htmlFor={feature.id} className="font-medium cursor-pointer">
                           {feature.label}
-                          {feature.mandatory && (
-                            <span className="text-xs text-gray-500 ml-2">(Required)</span>
+                          {(included || feature.mandatory) && (
+                            <span className="text-xs text-gray-500 ml-2"> (Included)</span>
                           )}
+                          {!included && !feature.mandatory && recommendedFeatures.includes(feature.id) && <span className="text-xs text-primary-700 ml-2"> Recommended</span>}
                         </label>
                         {feature.description && <p className="text-sm text-gray-600 mt-1">{feature.description}</p>}
                         {feature.quantityFrom && <p className="text-sm text-gray-600">Quantity from your project answers: {quantity}</p>}
@@ -439,7 +466,7 @@ export default function ServiceCalculator({ calculator, preview = false }: Servi
                               type="number"
                               value={quantity}
                               onChange={(e) => handleQuantityChange(feature.id, Number(e.target.value))}
-                              min={feature.minQuantity ?? 1}
+                              min={included ? featureQuantity(feature, config, {}) : feature.minQuantity ?? 1}
                               max={feature.maxQuantity}
                               className="w-32"
                               placeholder={feature.quantityLabel || 'Quantity'}
