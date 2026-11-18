@@ -61,7 +61,7 @@ test('paid, cancelled and draft printouts have correct labels and no checkout fo
   }
 });
 
-function harness({ authenticated = false } = {}) {
+function harness({ authenticated = false, redis } = {}) {
   const records = new Map([['invoices/invoice1', fixture()], ['users/user1', { email: 'client@example.com' }]]);
   const snapshot = key => ({ exists: records.has(key), id: key.split('/').at(-1), data: () => structuredClone(records.get(key)) });
   const ref = key => ({ key, get: async () => snapshot(key), set: async (data, options) => records.set(key, { ...(options?.merge ? records.get(key) : {}), ...data }), update: async data => records.set(key, { ...records.get(key), ...data }) });
@@ -85,7 +85,7 @@ function harness({ authenticated = false } = {}) {
     '@/lib/firebase/admin': { getAdminFirestore: () => db, getAdminAuth: () => ({ getUser: async () => records.get('users/user1') }) },
     '@/lib/auth-helpers': { getAuthUserId: async () => authenticated ? 'user1' : null, isAdmin: async () => authenticated },
     '@/lib/stripe/server': { stripe },
-    '@/lib/utils/rate-limit': { getClientIdentifier: () => 'test', checkRateLimit: async () => ({ success: true }), getRateLimitHeaders: () => ({}) },
+    '@/lib/utils/rate-limit': { paymentRateLimiter: redis, getClientIdentifier: () => 'test', getRateLimitHeaders: () => ({}) },
     '@/services/business-info-service': { getStoreSettings: async () => ({}) },
     '@/lib/email/email-service': { sendCustomerPaymentConfirmation: async () => true, sendPaymentReceivedEmail: async () => true },
     'firebase-admin/firestore': { Timestamp: { now: () => '2026-11-17' } },
@@ -188,6 +188,62 @@ test('only admins can generate client links, and drafts must first be issued', a
   assert.equal(response.status, 200); assert.match((await response.json()).url, /\/pay\/invoice1\?token=[a-f0-9]{64}$/);
   admin.records.get('invoices/invoice1').status = 'draft';
   assert.equal((await adminShare.POST(admin.request({}), { params: Promise.resolve({ id: 'invoice1' }) })).status, 409);
+});
+
+test('Redis DNS failure falls back to Firestore and checkout still reaches Stripe', async () => {
+  const h = harness({ redis: { limit: async () => { throw new TypeError('fetch failed', { cause: { code: 'ENOTFOUND' } }); } } });
+  const token = await h.sharing.ensureInvoiceToken('invoice1');
+  const response = await h.route.POST(h.request({ invoiceId: 'invoice1', token }));
+  assert.equal(response.status, 200); assert.equal(h.calls.length, 1);
+  const counters = [...h.records.entries()].filter(([key]) => key.startsWith('invoiceCheckoutRateLimits/'));
+  assert.equal(counters.length, 1); assert.equal(counters[0][1].requests.length, 1);
+  assert.match(counters[0][0], /\/[a-f0-9]{64}$/);
+});
+test('shared Firestore fallback enforces a rolling limit under concurrency and resets after expiry', async () => {
+  const h = harness();
+  const { consumeFirestoreInvoiceLimit } = load('lib/server/invoice-rate-limit.ts', h.mocks);
+  const results = await Promise.all(Array.from({ length: 15 }, () => consumeFirestoreInvoiceLimit('test-ip', 1000000)));
+  assert.equal(results.filter(result => result.success).length, 10);
+  assert.equal(results.filter(result => !result.success).length, 5);
+  const limited = await consumeFirestoreInvoiceLimit('test-ip', 1059999);
+  assert.equal(limited.success, false); assert.equal(limited.reset, 1060000);
+  const renewed = await consumeFirestoreInvoiceLimit('test-ip', 1060000);
+  assert.equal(renewed.success, true); assert.equal(renewed.remaining, 9);
+  assert.equal((await consumeFirestoreInvoiceLimit('another-ip', 1059999)).success, true);
+});
+test('a healthy Redis denial remains a denial and does not invoke the fallback', async () => {
+  const h = harness({ redis: { limit: async () => ({ success: false, limit: 10, remaining: 0, reset: Date.now() + 30000 }) } });
+  const response = await h.route.POST(h.request({ invoiceId: 'invoice1' }));
+  assert.equal(response.status, 429); assert.ok(Number(response.headers.get('retry-after')) > 0);
+  assert.equal([...h.records.keys()].some(key => key.startsWith('invoiceCheckoutRateLimits/')), false);
+  assert.equal(h.calls.length, 0);
+});
+test('Upstash timeout responses and hanging requests use the shared fallback', async () => {
+  for (const redis of [
+    { limit: async () => ({ success: true, reason: 'timeout' }) },
+    { limit: () => new Promise(() => {}) },
+  ]) {
+    const h = harness({ redis });
+    const { checkInvoicePaymentRateLimit } = load('lib/server/invoice-rate-limit.ts', h.mocks);
+    const result = await checkInvoicePaymentRateLimit(h.request({}));
+    assert.equal(result.success, true); assert.equal(result.remaining, 9);
+    assert.equal([...h.records.keys()].some(key => key.startsWith('invoiceCheckoutRateLimits/')), true);
+  }
+});
+test('if both limiters fail, browser clients get a private HTML error and Stripe is never called', async () => {
+  const h = harness({ redis: { limit: async () => { throw new Error('Redis unavailable'); } } });
+  h.mocks['@/lib/firebase/admin'] = { getAdminFirestore: () => { throw new Error('Private credentials must not appear in the response'); } };
+  const route = load('app/api/stripe/create-checkout-session/route.ts', h.mocks);
+  const form = new Request('https://example.com/api/stripe/create-checkout-session', { method: 'POST', body: new URLSearchParams({ invoiceId: 'invoice1', token: 'a'.repeat(64) }) });
+  const response = await route.POST(form);
+  assert.equal(response.status, 503); assert.match(response.headers.get('content-type'), /text\/html/);
+  assert.match(response.headers.get('cache-control'), /no-store/);
+  const html = await response.text(); assert.match(html, /Return to invoice/); assert.match(html, /Support reference:/);
+  assert.doesNotMatch(html, /Private credentials|Redis unavailable/);
+  assert.equal(h.calls.length, 0);
+  const json = await route.POST(h.request({ invoiceId: 'invoice1' }));
+  assert.equal(json.status, 503); assert.match(json.headers.get('content-type'), /application\/json/);
+  const data = await json.json(); assert.equal(data.error, 'Unable to start payment. Please try again.'); assert.ok(data.reference);
 });
 
 // Generate a harmless print fixture for manual layout review when requested.

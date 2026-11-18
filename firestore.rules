@@ -375,6 +375,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Shared payment rate-limit counters are written only by the Admin SDK.
+    match /invoiceCheckoutRateLimits/{key} {
+      allow read, write: if false;
+    }
+
     // Counters collection (for generating sequential proposal/invoice numbers)
     match /counters/{counterId} {
       // Only admins can read counters
