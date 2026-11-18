@@ -18,6 +18,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import InvoiceDelivery from '@/components/admin/InvoiceDelivery';
 import {
   PencilIcon,
   TrashIcon,
@@ -272,6 +273,8 @@ export default function ViewInvoicePage() {
             )}
         </div>
       </div>
+
+      <InvoiceDelivery invoice={invoice} />
 
       {/* Payment Status */}
       {invoice.status !== InvoiceStatus.DRAFT && (

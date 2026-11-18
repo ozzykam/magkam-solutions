@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
-import { getAdminFirestore } from '@/lib/firebase/admin';
+import { getAuthUserId } from '@/lib/auth-helpers';
+import { canPayInvoice, invoicePaymentAmounts } from '@/lib/invoice-payment';
+import { ensureInvoiceToken, invoiceAppOrigin, invoiceLinkRef, invoicePaymentUrl, privateInvoiceHeaders, validInvoiceId, verifyInvoiceToken } from '@/lib/server/invoice-sharing';
+import { createHash, randomUUID } from 'node:crypto';
+import { getAdminAuth, getAdminFirestore } from '@/lib/firebase/admin';
 import { Invoice } from '@/types/invoice';
 import {
   paymentRateLimiter,
@@ -26,136 +30,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { invoiceId, userEmail, amount, processingFee } = await request.json();
+    const isForm = request.headers.get('content-type')?.includes('application/x-www-form-urlencoded');
+    let body;
+    try { body = isForm ? Object.fromEntries(await request.formData()) : await request.json(); }
+    catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400 }); }
+    const { invoiceId, token } = body || {};
+    if (!validInvoiceId(invoiceId)) return NextResponse.json({ error: 'Invalid invoice' }, { status: 400 });
 
-    console.log('[Stripe Checkout] Request received:', {
-      invoiceId,
-      userEmail,
-      amount,
-      processingFee
-    });
-
-    if (!invoiceId || !userEmail || !amount) {
-      console.error('[Stripe Checkout] Missing required fields:', { invoiceId, userEmail, amount });
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
-    // Fetch the invoice using Admin SDK (bypasses security rules)
-    console.log('[Stripe Checkout] Fetching invoice:', invoiceId);
+    const tokenAccess = await verifyInvoiceToken(invoiceId, token);
+    const userId = tokenAccess ? null : await getAuthUserId();
+    if (!tokenAccess && !userId) return NextResponse.json({ error: 'Please sign in or use your client payment link' }, { status: 401 });
     const firestore = getAdminFirestore();
     const invoiceDoc = await firestore.collection('invoices').doc(invoiceId).get();
-
-    if (!invoiceDoc.exists) {
-      console.error('[Stripe Checkout] Invoice not found:', invoiceId);
-      return NextResponse.json(
-        { error: 'Invoice not found' },
-        { status: 404 }
-      );
-    }
-
-    const invoice = {
-      id: invoiceDoc.id,
-      ...invoiceDoc.data(),
-    } as Invoice;
-
-    console.log('[Stripe Checkout] Invoice found:', {
-      id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      clientEmail: invoice.client.email,
-      amountDue: invoice.amountDue,
-      status: invoice.status
-    });
-
-    // Verify the user has access to this invoice
-    if (invoice.client.email.toLowerCase() !== userEmail.toLowerCase()) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
-    }
-
-    // Check if invoice is already paid
-    if (invoice.amountDue <= 0) {
-      return NextResponse.json(
-        { error: 'Invoice is already paid' },
-        { status: 400 }
-      );
-    }
-
-    // Get or create Stripe Customer for this user
-    console.log('[Stripe Checkout] Getting/creating Stripe Customer for:', userEmail);
-    let customerId: string | undefined;
-
-    // First, try to get customer ID from Firestore user record
-    const usersSnapshot = await firestore
-      .collection('users')
-      .where('email', '==', userEmail.toLowerCase())
-      .limit(1)
-      .get();
-
-    if (!usersSnapshot.empty) {
-      const userData = usersSnapshot.docs[0].data();
-      customerId = userData.stripeCustomerId;
-
-      // Validate the customer ID exists in Stripe (handles test/live mode mismatch)
-      if (customerId) {
-        try {
-          await stripe.customers.retrieve(customerId);
-          console.log('[Stripe Checkout] Validated existing Stripe customer:', customerId);
-        } catch (error) {
-          const stripeErr = error as { code?: string };
-          if (stripeErr.code === 'resource_missing') {
-            console.log('[Stripe Checkout] Customer ID invalid (likely test mode in live mode), clearing...');
-            // Clear invalid customer ID
-            await firestore.collection('users').doc(usersSnapshot.docs[0].id).update({
-              stripeCustomerId: null,
-            });
-            customerId = undefined;
-          } else {
-            throw error;
-          }
-        }
+    if (!invoiceDoc.exists) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    const invoice = { ...invoiceDoc.data(), id: invoiceDoc.id } as Invoice;
+    if (!tokenAccess) {
+      const authUser = await getAdminAuth().getUser(userId!);
+      if (authUser.email?.toLowerCase() !== invoice.client.email.toLowerCase()) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
       }
     }
+    if (!canPayInvoice(invoice)) return NextResponse.json({ error: 'This invoice is not available for payment' }, { status: 409 });
+    const { amountCents, feeCents, totalCents, rate } = invoicePaymentAmounts(invoice);
+    const processingFee = feeCents / 100;
+    const amount = totalCents / 100;
+    const userEmail = invoice.client.email;
+    const shareToken = await ensureInvoiceToken(invoiceId);
+    const returnUrl = invoicePaymentUrl(invoiceAppOrigin(request), invoiceId, shareToken);
 
-    // If no customer ID in Firestore, search Stripe by email
-    if (!customerId) {
-      const customers = await stripe.customers.list({
-        email: userEmail.toLowerCase(),
-        limit: 1,
-      });
-
-      if (customers.data.length > 0) {
-        customerId = customers.data[0].id;
-        console.log('[Stripe Checkout] Found existing Stripe customer:', customerId);
-      } else {
-        // Create new Stripe customer
-        const customer = await stripe.customers.create({
-          email: userEmail.toLowerCase(),
-          name: invoice.client.name,
-          metadata: {
-            firebaseUid: usersSnapshot.docs[0]?.id || 'unknown',
-          },
-        });
-        customerId = customer.id;
-        console.log('[Stripe Checkout] Created new Stripe customer:', customerId);
-      }
-
-      // Save customer ID to Firestore if we have a user record
-      if (!usersSnapshot.empty) {
-        await firestore.collection('users').doc(usersSnapshot.docs[0].id).update({
-          stripeCustomerId: customerId,
-          updatedAt: new Date(),
-        });
-        console.log('[Stripe Checkout] Saved Stripe customer ID to Firestore');
-      }
-    } else {
-      console.log('[Stripe Checkout] Using existing Stripe customer from Firestore:', customerId);
-    }
-
+    // Bearer-link holders must never see or reuse a client's saved payment methods.
+    // Collect a fresh card through Stripe Checkout for each invoice payment.
     // Build line items
     const lineItems = [
       {
@@ -165,7 +69,7 @@ export async function POST(request: NextRequest) {
             name: `Invoice ${invoice.invoiceNumber}`,
             description: invoice.title || invoice.description || 'Payment for services',
           },
-          unit_amount: Math.round(invoice.amountDue * 100), // Convert to cents
+          unit_amount: amountCents, // Convert to cents
         },
         quantity: 1,
       },
@@ -177,27 +81,56 @@ export async function POST(request: NextRequest) {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'Credit Card Processing Fee',
-            description: '3% processing fee',
+            name: invoice.processingFeeConfig?.feeLabel || 'Online Payment Fee',
+            description: `${rate}% of the remaining invoice balance`,
           },
-          unit_amount: Math.round(processingFee * 100), // Convert to cents
+          unit_amount: feeCents, // Convert to cents
         },
         quantity: 1,
       });
     }
 
-    // Generate idempotency key to prevent duplicate checkout sessions
-    // Using invoiceId and amount ensures retry safety for the same invoice payment
-    const idempotencyKey = `checkout_${invoiceId}_${Math.round(amount * 100)}`;
+    // Reserve a stable attempt key transactionally so concurrent clicks reuse a session.
+    // A completed session blocks another charge while its webhook is in flight.
+    const checkoutRef = invoiceLinkRef(invoiceId);
+    const signature = createHash('sha256').update(JSON.stringify({
+      amountCents, feeCents, userEmail, returnUrl, invoiceNumber: invoice.invoiceNumber,
+      title: invoice.title, description: invoice.description, config: invoice.processingFeeConfig,
+    })).digest('hex');
+    const previous = (await checkoutRef.get()).data();
+    if (previous?.checkoutSessionId) {
+      const previousSession = await stripe.checkout.sessions.retrieve(previous.checkoutSessionId);
+      if (previousSession.status === 'complete') {
+        // Allow a later balance only after the earlier payment has been recorded.
+        const recorded = invoice.payments?.some(p => p.stripePaymentIntentId === previousSession.payment_intent);
+        if (!recorded) return NextResponse.json({ error: 'Payment confirmation is pending. Please refresh the invoice shortly.' }, { status: 409 });
+      }
+      if (previousSession.status === 'open' && previous.signature === signature && previousSession.url) {
+        return isForm ? NextResponse.redirect(previousSession.url, 303) : NextResponse.json({ sessionId: previousSession.id, url: previousSession.url }, { headers: privateInvoiceHeaders });
+      }
+      if (previousSession.status === 'open') await stripe.checkout.sessions.expire(previousSession.id);
+    }
+    const attempt = await firestore.runTransaction(async transaction => {
+      const state = (await transaction.get(checkoutRef)).data();
+      // A failed/in-progress creation can safely retry with the same Stripe key.
+      if (state?.signature === signature && state.attempt
+        && (!state.checkoutSessionId || state.checkoutSessionId !== previous?.checkoutSessionId)) return state.attempt as string;
+      if (state?.checkoutSessionId && state.checkoutSessionId !== previous?.checkoutSessionId) {
+        throw new Error('Checkout changed. Please try again.');
+      }
+      const nextAttempt = randomUUID();
+      transaction.set(checkoutRef, { signature, attempt: nextAttempt, checkoutSessionId: null }, { merge: true });
+      return nextAttempt;
+    });
+    const idempotencyKey = `invoice_${invoiceId}_${attempt}`;
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
-      customer: customerId, // Use Stripe Customer ID instead of email
+      customer_email: userEmail,
       line_items: lineItems,
       payment_intent_data: {
-        setup_future_usage: 'on_session', // Save payment method for future use
         metadata: {
           invoiceId: invoice.id,
           invoiceNumber: invoice.invoiceNumber,
@@ -207,24 +140,26 @@ export async function POST(request: NextRequest) {
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         clientEmail: invoice.client.email,
-        invoiceAmount: invoice.amountDue.toString(),
+        invoiceAmount: (amountCents / 100).toString(),
         processingFee: processingFee?.toString() || '0',
         totalAmount: amount.toString(),
       },
-      success_url: `${request.headers.get('origin')}/account/invoices/${invoiceId}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${request.headers.get('origin')}/account/invoices/${invoiceId}?payment=cancelled`,
+      success_url: `${returnUrl}&payment=submitted`,
+      cancel_url: returnUrl,
     }, {
       idempotencyKey,
     });
 
+    await checkoutRef.set({ checkoutSessionId: session.id }, { merge: true });
+    if (isForm && session.url) return NextResponse.redirect(session.url, 303);
     return NextResponse.json(
       { sessionId: session.id, url: session.url },
-      { headers: rateLimitHeaders }
+      { headers: { ...rateLimitHeaders, ...privateInvoiceHeaders } }
     );
   } catch (error) {
     console.error('Error creating checkout session:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'Unable to start payment. Please try again.' },
       { status: 500 }
     );
   }

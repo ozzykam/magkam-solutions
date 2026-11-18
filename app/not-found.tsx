@@ -51,20 +51,6 @@ export default function NotFound() {
           <p className="text-sm text-gray-500 mb-4">Here are some helpful links instead:</p>
           <div className="flex flex-wrap justify-center gap-4 text-sm">
             <Link
-              href="/shop"
-              className="text-red-600 hover:text-red-700 font-medium hover:underline"
-            >
-              Shop All Services
-            </Link>
-            <span className="text-gray-300">•</span>
-            <Link
-              href="/vendors"
-              className="text-red-600 hover:text-red-700 font-medium hover:underline"
-            >
-              Our Vendors
-            </Link>
-            <span className="text-gray-300">•</span>
-            <Link
               href="/about"
               className="text-red-600 hover:text-red-700 font-medium hover:underline"
             >

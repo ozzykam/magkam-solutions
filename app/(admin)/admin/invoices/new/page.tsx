@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { InvoiceStatus, LineItem, ClientInfo, TaxConfig, Invoice } from '@/types/invoice';
+import { NEW_INVOICE_PROCESSING_FEE, InvoiceStatus, LineItem, ClientInfo, TaxConfig, Invoice } from '@/types/invoice';
 import { createInvoice } from '@/services/invoice-service';
 import { getClients } from '@/services/client-service';
 import { getProjects } from '@/services/project-service';
@@ -81,6 +81,8 @@ export default function NewInvoicePage() {
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
   const [discountValue, setDiscountValue] = useState(0);
   const [discountReason, setDiscountReason] = useState('');
+
+  const [enableOnlineFee, setEnableOnlineFee] = useState(true);
 
   // Dates and terms
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
@@ -174,6 +176,7 @@ export default function NewInvoicePage() {
       // Build invoice data conditionally to avoid undefined values
       const invoiceData: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt' | 'createdBy'> = {
         status,
+        processingFeeConfig: { ...NEW_INVOICE_PROCESSING_FEE, enabled: enableOnlineFee },
         client: {
           name: clientInfo.name,
           email: clientInfo.email,
@@ -576,6 +579,15 @@ export default function NewInvoicePage() {
               </div>
             </div>
           )}
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-3">Online payment fee</h2>
+          <label className="flex items-center gap-3 text-gray-800">
+            <input type="checkbox" checked={enableOnlineFee} onChange={event => setEnableOnlineFee(event.target.checked)} />
+            Add a 3% fee when this invoice is paid online through Stripe
+          </label>
+          <p className="text-sm text-gray-600 mt-2">Shown separately on the PDF and at checkout. Offline payments do not include this fee.</p>
         </Card>
 
         {/* Terms and Notes */}

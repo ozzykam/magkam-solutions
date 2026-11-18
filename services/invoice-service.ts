@@ -26,6 +26,7 @@ import {
   calculateTotal,
   generateProposalNumber,
   generateInvoiceNumber,
+  NEW_INVOICE_PROCESSING_FEE,
 } from '@/types/invoice';
 
 const PROPOSALS_COLLECTION = 'proposals';
@@ -540,6 +541,7 @@ export const createInvoice = async (
 
     const newInvoice: Invoice = {
       ...invoiceData,
+      processingFeeConfig: invoiceData.processingFeeConfig ?? { ...NEW_INVOICE_PROCESSING_FEE },
       id: docRef.id,
       invoiceNumber,
       createdBy: userId,
@@ -712,6 +714,7 @@ export const convertProposalToInvoice = async (
     const invoiceData: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt'> = {
       status: InvoiceStatus.DRAFT,
       client: proposal.client,
+      processingFeeConfig: proposal.processingFeeConfig ?? { ...NEW_INVOICE_PROCESSING_FEE },
       ...(proposal.linkedClientId && { linkedClientId: proposal.linkedClientId }),
       ...(proposal.linkedClientName && { linkedClientName: proposal.linkedClientName }),
       ...(proposal.linkedProjectId && { linkedProjectId: proposal.linkedProjectId }),

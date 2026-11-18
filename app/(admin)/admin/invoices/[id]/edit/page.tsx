@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Invoice, InvoiceStatus, LineItem, ClientInfo, TaxConfig } from '@/types/invoice';
+import { NEW_INVOICE_PROCESSING_FEE, Invoice, InvoiceStatus, LineItem, ClientInfo, TaxConfig } from '@/types/invoice';
 import { getInvoiceById, updateInvoice } from '@/services/invoice-service';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import Card from '@/components/ui/Card';
@@ -62,6 +62,8 @@ export default function EditInvoicePage() {
   const [discountValue, setDiscountValue] = useState(0);
   const [discountReason, setDiscountReason] = useState('');
 
+  const [enableOnlineFee, setEnableOnlineFee] = useState(false);
+
   // Dates and terms
   const [issueDate, setIssueDate] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -82,6 +84,7 @@ export default function EditInvoicePage() {
       }
 
       setInvoice(data);
+      setEnableOnlineFee(data.processingFeeConfig?.enabled ?? false);
 
       // Populate form fields
       setTitle(data.title || '');
@@ -231,12 +234,14 @@ export default function EditInvoicePage() {
       // Build update data conditionally to avoid undefined values
       const updateData: Record<string, unknown> = {
         status,
+        processingFeeConfig: { ...NEW_INVOICE_PROCESSING_FEE, enabled: enableOnlineFee },
         client: clientData,
         lineItems,
         subtotal: subtotal,
         taxAmount: taxAmount,
         discountAmount: discountAmount,
         total: totals,
+        amountDue: Math.max(0, Math.round((totals - invoice.amountPaid) * 100) / 100),
         issueDate: new Date(issueDate),
         dueDate: new Date(dueDate),
       };
@@ -612,6 +617,15 @@ export default function EditInvoicePage() {
               </div>
             </div>
           )}
+        </Card>
+
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-3">Online payment fee</h2>
+          <label className="flex items-center gap-3 text-gray-800">
+            <input type="checkbox" checked={enableOnlineFee} onChange={event => setEnableOnlineFee(event.target.checked)} />
+            Add a 3% fee when this invoice is paid online through Stripe
+          </label>
+          <p className="text-sm text-gray-600 mt-2">Shown separately on the PDF and at checkout. Offline payments do not include this fee.</p>
         </Card>
 
         {/* Terms and Notes */}

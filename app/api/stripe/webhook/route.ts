@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
   // Handle the event
   try {
     switch (event.type) {
+      case 'checkout.session.async_payment_succeeded':
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
 
@@ -52,6 +53,14 @@ export async function POST(request: NextRequest) {
         if (!invoiceId) {
           console.error('No invoiceId in session metadata');
           return NextResponse.json({ received: true });
+        }
+
+        if (session.payment_status !== 'paid') return NextResponse.json({ received: true });
+        if (!Number.isFinite(invoiceAmount) || invoiceAmount <= 0 || !Number.isFinite(processingFee) || processingFee < 0
+          || session.currency !== 'usd'
+          || Math.round(invoiceAmount * 100) + Math.round(processingFee * 100) !== session.amount_total
+          || typeof session.payment_intent !== 'string') {
+          throw new Error('Invalid invoice payment metadata or Stripe amount');
         }
 
         // Record payment using Admin SDK (bypasses security rules)
@@ -100,43 +109,34 @@ export async function POST(request: NextRequest) {
           stripePaymentIntentId: session.payment_intent as string,
           amount: invoiceAmount, // Invoice amount only, not including processing fee
           processingFee: processingFee, // Processing fee charged (3% for card payments)
-          totalPaid: invoiceAmount + processingFee, // Total amount customer actually paid
+          totalPaid: session.amount_total / 100, // Total amount customer actually paid
           paymentMethod: 'card',
           transactionNote: `Stripe card payment${processingFee > 0 ? ` (includes $${processingFee.toFixed(2)} processing fee)` : ''}`,
           paidAt: AdminTimestamp.now() as unknown as ClientTimestamp,
-          cardBrand,
-          cardLast4,
+          ...(cardBrand ? { cardBrand } : {}),
+          ...(cardLast4 ? { cardLast4 } : {}),
         };
 
-        // Calculate new totals
-        const updatedPayments = [...invoice.payments, payment];
-        const totalPaid = updatedPayments.reduce((sum, p) => sum + p.amount, 0);
-        const amountDue = invoice.total - totalPaid;
-
-        // Determine new status
-        let newStatus: InvoiceStatus;
-        if (amountDue <= 0) {
-          newStatus = InvoiceStatus.PAID;
-        } else if (totalPaid > 0) {
-          newStatus = InvoiceStatus.PARTIALLY_PAID;
-        } else {
-          newStatus = invoice.status;
-        }
-
-        // Update invoice
-        const updates: Record<string, unknown> = {
-          payments: updatedPayments,
-          amountPaid: totalPaid,
-          amountDue: amountDue,
-          status: newStatus,
-          updatedAt: AdminTimestamp.now(),
-        };
-
-        if (amountDue <= 0) {
-          updates.paidAt = AdminTimestamp.now();
-        }
-
-        await invoiceRef.update(updates);
+        // Stripe retries webhooks; transact both deduplication and balance updates.
+        const recorded = await firestore.runTransaction(async transaction => {
+          const latest = await transaction.get(invoiceRef);
+          if (!latest.exists) throw new Error('Invoice disappeared during payment recording');
+          const current = latest.data() as Invoice;
+          if ((current.payments || []).some(p => p.stripePaymentIntentId === payment.stripePaymentIntentId)) return null;
+          const updatedPayments = [...(current.payments || []), payment];
+          const totalPaid = Math.round(updatedPayments.reduce((sum, p) => sum + p.amount, 0) * 100) / 100;
+          const amountDue = Math.max(0, Math.round((current.total - totalPaid) * 100) / 100);
+          const updates: Record<string, unknown> = {
+            payments: updatedPayments, amountPaid: totalPaid, amountDue,
+            status: amountDue <= 0 ? InvoiceStatus.PAID : InvoiceStatus.PARTIALLY_PAID,
+            updatedAt: AdminTimestamp.now(),
+          };
+          if (amountDue <= 0) updates.paidAt = AdminTimestamp.now();
+          transaction.update(invoiceRef, updates);
+          return { amountDue };
+        });
+        if (!recorded) return NextResponse.json({ received: true });
+        const { amountDue } = recorded;
 
         console.log(`[Webhook] Payment recorded for invoice ${invoiceId}: $${invoiceAmount} (processing fee: $${processingFee})`);
 

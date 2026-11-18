@@ -356,16 +356,23 @@ service cloud.firestore {
       allow create: if isAdmin() &&
                       request.resource.data.createdBy == request.auth.uid;
 
-      // Admins can update invoices
-      // Customers can update their own invoices (e.g., marking as viewed)
+      // Customers may acknowledge viewing only; pricing and payment records are admin/server controlled.
       allow update: if isAdmin() ||
-                      (isSignedIn() && (
-                        resource.data.clientId == request.auth.uid ||
-                        resource.data.client.email == request.auth.token.email
-                      ));
+                        (isSignedIn() && (
+                          resource.data.get('clientId', '') == request.auth.uid ||
+                          resource.data.client.email == request.auth.token.email
+                        ) && resource.data.status == 'sent'
+                          && request.resource.data.status == 'viewed'
+                          && request.resource.data.diff(resource.data).affectedKeys()
+                            .hasOnly(['status', 'viewedAt', 'updatedAt']));
 
       // Only admins can delete invoices
       allow delete: if isAdmin();
+    }
+
+    // Payment links and checkout state are private to the Admin SDK.
+    match /invoicePaymentLinks/{invoiceId} {
+      allow read, write: if false;
     }
 
     // Counters collection (for generating sequential proposal/invoice numbers)

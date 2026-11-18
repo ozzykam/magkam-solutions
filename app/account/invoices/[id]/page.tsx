@@ -14,6 +14,7 @@ import {
   DEFAULT_PROCESSING_FEE
 } from '@/types/invoice';
 import { getInvoiceById, markInvoiceAsViewed } from '@/services/invoice-service';
+import { canPayInvoice } from '@/lib/invoice-payment';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -82,11 +83,6 @@ export default function CustomerInvoiceDetailPage() {
     try {
       setProcessing(true);
 
-      // Calculate total with processing fee
-      const processingFeeConfig = invoice.processingFeeConfig || DEFAULT_PROCESSING_FEE;
-      const processingFee = calculateProcessingFee(invoice.amountDue, processingFeeConfig);
-      const totalWithFee = calculateTotalWithProcessingFee(invoice.amountDue, processingFeeConfig);
-
       // Create Stripe checkout session
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
@@ -95,9 +91,6 @@ export default function CustomerInvoiceDetailPage() {
         },
         body: JSON.stringify({
           invoiceId: invoice.id,
-          userEmail: user.email,
-          amount: totalWithFee, // Send total including processing fee
-          processingFee: processingFee,
         }),
       });
 
@@ -171,7 +164,7 @@ export default function CustomerInvoiceDetailPage() {
   }
 
   const remainingBalance = invoice.total - invoice.amountPaid;
-  const canPay = invoice.status !== InvoiceStatus.PAID && invoice.status !== InvoiceStatus.CANCELLED && remainingBalance > 0;
+  const canPay = canPayInvoice(invoice);
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -268,7 +261,7 @@ export default function CustomerInvoiceDetailPage() {
                 <span className="font-medium">{formatCurrency(remainingBalance)}</span>
               </div>
               <div className="flex justify-between text-gray-700">
-                <span>Processing Fee (0%):</span>
+                <span>Online Payment Fee ({invoice.processingFeeConfig?.enabled ? invoice.processingFeeConfig.cardFeePercent : 0}%):</span>
                 <span className="font-medium">
                   {formatCurrency(calculateProcessingFee(remainingBalance, invoice.processingFeeConfig || DEFAULT_PROCESSING_FEE))}
                 </span>

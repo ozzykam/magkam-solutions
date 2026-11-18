@@ -75,6 +75,13 @@ export const DEFAULT_PROCESSING_FEE: ProcessingFeeConfig = {
   feeLabel: 'Credit Card Processing Fee',
 };
 
+// Explicitly persisted for new invoices; legacy invoices retain their original no-fee default.
+export const NEW_INVOICE_PROCESSING_FEE: ProcessingFeeConfig = {
+  enabled: true,
+  cardFeePercent: 3,
+  feeLabel: 'Online Payment Fee',
+};
+
 /**
  * Payment Method Discount Configuration
  * Allows offering discounts for certain payment methods (e.g., ACH)
