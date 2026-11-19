@@ -92,6 +92,8 @@ export async function POST(request: NextRequest) {
     // A completed session blocks another charge while its webhook is in flight.
     const checkoutRef = invoiceLinkRef(invoiceId);
     const signature = createHash('sha256').update(JSON.stringify({
+      // Replace older sessions that prefilled and locked the invoice email.
+      payerEmailMode: 'collect_at_checkout',
       amountCents, feeCents, userEmail, returnUrl, invoiceNumber: invoice.invoiceNumber,
       title: invoice.title, description: invoice.description, config: invoice.processingFeeConfig,
     })).digest('hex');
@@ -132,7 +134,7 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
-      customer_email: userEmail,
+      // Let the payer enter their own email; invoice ownership stays in metadata.
       line_items: lineItems,
       payment_intent_data: {
         metadata: {

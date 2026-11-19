@@ -117,11 +117,14 @@ test('guest checkout ignores supplied prices, discloses fee, and never attaches 
   assert.deepEqual(h.calls[0].line_items.map(item => item.price_data.unit_amount), [100000, 3000]);
   assert.equal(h.calls[0].metadata.invoiceAmount, '1000'); assert.equal(h.calls[0].metadata.processingFee, '30');
   assert.equal(h.calls[0].customer, undefined); assert.equal(h.calls[0].payment_intent_data.setup_future_usage, undefined);
+  assert.equal(h.calls[0].customer_email, undefined);
+  assert.equal(h.calls[0].metadata.clientEmail, 'client@example.com');
   assert.match(h.calls[0].success_url, /\/pay\/invoice1\?token=/);
 });
 test('authenticated invoice owners can pay, unrelated accounts cannot', async () => {
   const h = harness({ authenticated: true });
   assert.equal((await h.route.POST(h.request({ invoiceId: 'invoice1' }))).status, 200);
+  assert.equal(h.calls[0].customer_email, undefined); assert.equal(h.calls[0].customer, undefined);
   h.records.set('users/user1', { email: 'someone-else@example.com' });
   assert.equal((await h.route.POST(h.request({ invoiceId: 'invoice1' }))).status, 403);
 });
@@ -133,6 +136,25 @@ test('checkout reuses open sessions, renews expired sessions and blocks pending 
   h.sessions.get('cs_2').status = 'complete'; h.sessions.get('cs_2').payment_intent = 'pi_pending';
   assert.equal((await pay()).status, 409); assert.equal(h.calls.length, 2);
 });
+test('checkout replaces legacy fixed-email sessions and reuses the replacement', async () => {
+  const h = harness(); const token = await h.sharing.ensureInvoiceToken('invoice1');
+  const invoice = fixture();
+  const signature = require('node:crypto').createHash('sha256').update(JSON.stringify({
+    amountCents: 100000, feeCents: 3000, userEmail: invoice.client.email,
+    returnUrl: h.sharing.invoicePaymentUrl(h.sharing.invoiceAppOrigin(h.request({})), 'invoice1', token),
+    invoiceNumber: invoice.invoiceNumber, title: invoice.title, description: invoice.description,
+    config: invoice.processingFeeConfig,
+  })).digest('hex');
+  h.records.set('invoicePaymentLinks/invoice1', { token, signature, attempt: 'legacy', checkoutSessionId: 'cs_legacy' });
+  h.sessions.set('cs_legacy', { id: 'cs_legacy', status: 'open', url: 'https://checkout.stripe.com/legacy', customer_email: invoice.client.email });
+  const pay = () => h.route.POST(h.request({ invoiceId: 'invoice1', token }));
+  assert.equal((await pay()).status, 200);
+  assert.equal(h.sessions.get('cs_legacy').status, 'expired');
+  assert.equal(h.calls.length, 1); assert.equal(h.calls[0].customer_email, undefined);
+  assert.equal(await h.sharing.ensureInvoiceToken('invoice1'), token);
+  assert.equal((await pay()).status, 200); assert.equal(h.calls.length, 1);
+});
+
 test('concurrent checkout submissions create only one Stripe session', async () => {
   const h = harness(); const token = await h.sharing.ensureInvoiceToken('invoice1');
   const responses = await Promise.all([1, 2].map(() => h.route.POST(h.request({ invoiceId: 'invoice1', token }))));
@@ -150,7 +172,7 @@ test('form checkout redirects to Stripe, and draft/cancelled/paid invoices rejec
 });
 test('webhook records base and fee separately, ignores unpaid sessions, deduplicates retries', async () => {
   const h = harness(); const webhook = load('app/api/stripe/webhook/route.ts', h.mocks);
-  const session = { metadata: { invoiceId: 'invoice1', invoiceAmount: '1000', processingFee: '30' }, amount_total: 103000, currency: 'usd', payment_status: 'unpaid', payment_intent: 'pi_test' };
+  const session = { customer_details: { email: 'payer@example.com' }, metadata: { invoiceId: 'invoice1', invoiceAmount: '1000', processingFee: '30' }, amount_total: 103000, currency: 'usd', payment_status: 'unpaid', payment_intent: 'pi_test' };
   const deliver = () => webhook.POST(new Request('https://example.com/api/stripe/webhook', { method: 'POST', headers: { 'stripe-signature': 'test' }, body: JSON.stringify({ type: 'checkout.session.completed', data: { object: session } }) }));
   assert.equal((await deliver()).status, 200); assert.equal(h.records.get('invoices/invoice1').payments.length, 0);
   session.payment_status = 'paid';
@@ -159,6 +181,7 @@ test('webhook records base and fee separately, ignores unpaid sessions, deduplic
   assert.equal(invoice.payments.length, 1); assert.equal(invoice.amountPaid, 1000); assert.equal(invoice.amountDue, 0);
   assert.equal(invoice.payments[0].totalPaid, 1030); assert.equal(invoice.payments[0].processingFee, 30);
   assert.equal(invoice.status, 'paid');
+  assert.equal(invoice.client.email, 'client@example.com');
 });
 test('webhook rejects mismatched Stripe totals without recording a payment', async () => {
   const h = harness(); const webhook = load('app/api/stripe/webhook/route.ts', h.mocks);

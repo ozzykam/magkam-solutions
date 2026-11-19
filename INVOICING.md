@@ -14,6 +14,8 @@ The client opens `https://www.magkamsolutions.com/pay/INVOICE_ID?token=GENERATED
 
 The link stays stable and creates/reuses a Stripe Checkout session when the client pays. It does not expire with the underlying Checkout session. After payment, the client returns to the same invoice page; the signed Stripe webhook updates its balance. A success redirect alone never marks an invoice paid.
 
+Stripe Checkout collects the payer's chosen email address, which can differ from the invoice's billing email. The payment is matched using the invoice ID; the invoice's billing email and account access remain unchanged. The app's invoice confirmation email still goes to the billing email. After deploying this change, reopen the invoice payment link and click the payment button to replace an older checkout session that had a fixed email; no replacement PDF is needed.
+
 ## Fee and payment options
 
 - A $1,000 remaining balance with the 3% setting enabled shows a $30 online fee and a $1,030 online total. The fee is calculated on the remaining balance, after invoice discounts, tax, and previously recorded payments, and rounded to cents.
